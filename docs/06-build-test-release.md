@@ -74,7 +74,7 @@ Works on Android 11+ when the phone and the Mac are on the same network (verifie
 
 **Xiaomi / MIUI phones:**
 - Turn on **Install via USB** in Developer options, or `adb install` fails with `INSTALL_FAILED_USER_RESTRICTED`. Watch the phone for an install prompt.
-- Without **USB debugging (Security settings)**, adb can't write secure settings or inject touch. The shortcut below and `adb shell input` won't work, so enable the accessibility service from the app's *Enable* button and test gestures by hand. This toggle may require a Mi account and a SIM.
+- Without **USB debugging (Security settings)**, adb can't write secure settings or inject touch (`INJECT_EVENTS` / `WRITE_SECURE_SETTINGS` denied). The shortcut below and `adb shell input` then don't work, so enable the accessibility service from the app's *Enable* button and test gestures by hand. With it on, `input tap/swipe/motionevent` work (see "Driving the phone with adb" below); `settings put secure` is still denied. This toggle may require a Mi account and a SIM.
 
 Developer shortcuts (emulator, or a phone that allows secure-settings writes):
 
@@ -94,32 +94,42 @@ adb shell dumpsys window windows | grep -i edgevol
 
 | Layer | Tooling | What's covered |
 |---|---|---|
-| **Unit** (JVM) | JUnit | `HandleGestures`: drag distance → steps (24 dp per step, direction, no step on jitter < 24 dp, long-press vs drag) |
-| **Unit** (Robolectric) | `ShadowAudioManager` | `SystemVolume`: `showPanel()` uses `ADJUST_SAME` + `FLAG_SHOW_UI`; `step()` raises/lowers the level; `SecurityException` → `false`. `PrefsRepository` round-trip |
-| **Compose UI** | `createComposeRule` | Setup screen: service off/on states, buttons fire the right callbacks, prefs controls update `Prefs` |
-| **On-device** | Instrumented tests + adb | Service connects and the handle window exists; tap shows the system panel; drag changes the media level |
+| **Unit** (JVM) | JUnit | `HandleGestures` (tap vs hold vs ignored movement, slop/tap-travel thresholds, reposition deltas, `moved`, cancel) and `HandleSnap` (side by half-screen, 10–90% clamp); `PanelToggle` with a fake clock (swallow window, boundary, reset, `markShown`); `PrefsRepository` against a temp-file DataStore (defaults, round trip, clamping, wrong-typed/unknown/corrupt data); `SetupState` mapping; `SetupStatus` defaults; `SystemVolume.showPanel()` via the injected lambda; resource-text and manifest guards (disclosure == a11y description, no `INTERNET`, no drag-volume leftovers) |
+| **Compose UI** | `createComposeRule` | Setup screen: Off / enabled-but-not-running / Running states, buttons fire the right callbacks; prefs controls update `Prefs` (M3) |
+| **On-device** | Instrumented tests + adb | Service connects and the handle window exists; tap shows the panel (`vol.MiuiVolumeDialogImp-plugin` log); a second tap within 1.8 s does not re-show it; hold + drag snaps to a side at the dragged height (`dumpsys window windows` frame); side/position survive a service restart (DataStore file via `run-as`) |
 | **Manual matrix** | Emulators + your phone | See below |
+
+### Driving the phone with adb (verified 2026-10-17, POCO X2 / MIUI 12.5)
+
+With MIUI *USB debugging (Security settings)* on, `adb shell input tap|swipe|motionevent` and `uiautomator dump` work, so the gestures can be scripted **inside EdgeVol, Settings and the home screen only**:
+- Tap: `input tap X Y` inside the frame from `dumpsys window windows | grep -A12 EdgeVolHandle`. Hold: `input swipe X Y X Y 1200`. Hold + drag in one shell so timing holds: `adb shell 'input motionevent DOWN X Y; sleep 0.8; input motionevent MOVE X1 Y1; …; input motionevent UP X1 Y1'`.
+- Check `dumpsys activity activities | grep mResumedActivity` **before every injection**: a tap lands in whatever app is in front.
+- Evidence: `adb logcat -d -v time -s EdgeVol:V vol.MiuiVolumeDialogImp-plugin:V` (`showVolumeDialogH`, `dismissH … reason:1` touch outside / `3` timeout), `dumpsys accessibility` (*Bound*/*Crashed services*), DataStore: `run-as app.edgevol xxd files/datastore/handle.preferences_pb`.
+- `am force-stop app.edgevol` clears the service from `enabled_accessibility_services` (screen shows *Off*); `am crash app.edgevol` keeps it enabled and lists it under *Crashed services* (reproduces "cleared from Recents": screen shows *Enabled but not running*).
+- `uiautomator dump` prints a harmless MIUI `theme_compatibility.xml` FileNotFoundException trace.
 
 ### Device / scenario matrix (M5)
 
 | Scenario | API 29 emu | API 34 emu | API 36 emu | Physical phone |
 |---|---|---|---|---|
-| Tap handle → system panel over YouTube / Chrome / a game | ☐ | ☐ | ☐ | ☐ |
-| Drag along handle → media volume steps while music plays | ☐ | ☐ | ☐ | ☐ |
-| Drag with nothing playing → device-default stream (same as keys) | ☐ | ☐ | ☐ | ☐ |
-| Drag during a call → call volume | — | ☐ | ☐ | ☐ |
-| Gestures with **gesture nav** (no accidental back) | ☐ | ☐ | ☐ | ☐ |
+| Tap handle → system panel over YouTube / Chrome / a game | ☐ | ☐ | ☐ | ☐ (shown over home/EdgeVol/Settings by adb) |
+| Second tap within 1.8 s is swallowed (no re-show); tap after the panel timed out shows it again | ☐ | ☐ | ☐ | ☑ adb (MIUI) |
+| Does a tap on the handle close the panel on this OEM? (MIUI 12.5: **no**) | ☐ | ☐ | ☐ | ☑ adb (MIUI) |
+| Hold 500 ms → handle widens (visual + haptic) | ☐ | ☐ | ☐ | ☐ by hand |
+| Hold + drag → snaps to the nearest side at the released height (10–90% clamp); hold + release without moving does nothing | ☐ | ☐ | ☐ | ☑ adb |
+| Side + position persist across a service restart / reboot | ☐ | ☐ | ☐ | ☑ restart (adb) · ☐ reboot |
+| Gestures with **gesture nav** (no accidental back on either edge, incl. after snapping left) | ☐ | ☐ | ☐ | ☐ by hand |
 | Gestures with **3-button nav** | ☐ | ☐ | ☐ | ☐ |
-| QS tile → shade collapses (31+) and panel shows | ☐ | ☐ | ☐ | ☐ |
+| QS tile → shade collapses (31+) and panel shows (M3) | ☐ | ☐ | ☐ | ☐ |
 | Handle visible over the notification shade | ☐ | ☐ | ☐ | ☐ |
 | Over an app using `HIDE_OVERLAY_WINDOWS` (e.g. banking) | n/a | ☐ | ☐ | ☐ |
-| Lowering ring into silent with DND on → falls back to the panel, no crash | ☐ | ☐ | ☐ | ☐ |
 | Expand system panel → ring / notification / alarm reachable | ☐ | ☐ | ☐ | ☐ |
-| Bluetooth headphones: media level follows | — | — | — | ☐ |
-| Rotation / split-screen: handle stays on the edge | ☐ | ☐ | ☐ | ☐ |
-| Reboot: handle returns without opening the app | ☐ | ☐ | ☐ | ☐ |
-| App swiped from recents: handle persists | ☐ | ☐ | ☐ | ☐ |
-| TalkBack: handle actions (show panel / up / down) | ☐ | ☐ | ☐ | ☐ |
+| Bluetooth headphones: panel shows the media stream | — | — | — | ☐ |
+| Rotation / split-screen: handle stays on its edge (either side) | ☐ | ☐ | ☐ | ☐ |
+| Reboot: handle returns without opening the app, at the saved side/height | ☐ | ☐ | ☐ | ☐ |
+| App cleared from Recents (MIUI): setup screen shows *Enabled but not running*; off/on recovers | ☐ | ☐ | ☐ | ☑ crash/force-stop (adb) · ☐ real Recents swipe |
+| Screen off/on: handle persists | ☐ | ☐ | ☐ | ☐ |
+| TalkBack: double-tap on the handle shows the panel | ☐ | ☐ | ☐ | ☐ |
 
 ## Release (personal sideload)
 
@@ -130,8 +140,8 @@ adb shell dumpsys window windows | grep -i edgevol
 
 ## Definition of done (v1.0)
 
-- [ ] Tap → system panel and drag → volume steps work from any app on API 29/34/36 emulators and the physical phone
-- [ ] All streams reachable through the system panel; refused steps fall back to the panel without crashing
+- [ ] Tap → system panel works from any app on API 29/34/36 emulators and the physical phone; hold-and-drag moves the handle to either side and the position survives restarts
+- [ ] All streams reachable through the system panel
 - [ ] QS tile shows the panel (and opens setup when the service is off)
 - [ ] No `INTERNET` permission in the merged manifest (`./gradlew :app:processReleaseManifest` + inspect)
 - [ ] Unit + Compose UI tests green

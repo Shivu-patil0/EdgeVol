@@ -33,7 +33,7 @@
 |---|---|
 | ✅ **Adopt** | QS tile + edge trigger (DhwaniControl); **show the system volume panel** instead of a custom one (DhwaniControl, Native Volume); no ads, no trackers, open-source mindset |
 | ❌ **Avoid** | Always-visible bubbles, heavy theming, ads, permanent foreground notification, EQ/booster scope creep |
-| ⭐ **Add** | **Invisible by default** (4 dp sliver, configurable); **the handle is a virtual volume rocker** (drag along it to step volume, like the hardware keys); **works over the notification shade and apps that block overlays** (accessibility overlay); **no `INTERNET` permission**, no DND permission, no permanent notification |
+| ⭐ **Add** | **Invisible by default** (4 dp sliver, configurable); **a tap summons the system volume panel** (the handle can be parked on either side by hold-and-drag; M2.1 removed the earlier drag-to-step idea); **works over the notification shade and apps that block overlays** (accessibility overlay); **no `INTERNET` permission**, no DND permission, no permanent notification |
 
 ## Positioning
 

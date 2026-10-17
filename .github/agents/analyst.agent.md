@@ -23,7 +23,7 @@ Questions: <only true product decisions the docs don't answer>
 ## Mode REVIEW (the brief says "REVIEW" and gives a diff path)
 Read the diff file and the touched files in full. Check, in this order:
 1. **Acceptance criteria**: each one met or not, with evidence.
-2. **Bugs**: logic errors, null or empty states, threading (main-thread `WindowManager` calls), gesture math (step threshold, direction, tap vs drag vs long-press).
+2. **Bugs**: logic errors, null or empty states, threading (main-thread `WindowManager` calls), gesture math (tap vs hold vs ignored movement, snap side and clamp, toggle window).
 3. **Invariants** from `.github/copilot-instructions.md`: no custom volume UI (only `SystemVolume`), no `INTERNET`, `canRetrieveWindowContent=false`, overlay type and flags, exported components protected by permissions.
 4. **API-level gating**: every API ≥ 27 call is behind `Build.VERSION.SDK_INT`.
 5. **Lifecycle**: the handle window is removed on unbind, coroutines are scoped, and no `Context` is leaked.

@@ -1,6 +1,6 @@
 # EdgeVol: project guidelines
 
-EdgeVol is a sideloaded Android app that puts **virtual volume keys** on the screen edge. An invisible handle, drawn by an AccessibilityService overlay, works in every app: a tap shows **Android's built-in volume panel**, and dragging along the handle steps volume like Volume +/−. A Quick Settings tile does the same. The specs live in [docs/](../docs/README.md); **docs are the source of truth**. Read the relevant doc before changing behavior.
+EdgeVol is a sideloaded Android app that puts a **volume button** on the screen edge. An invisible handle, drawn by an AccessibilityService overlay, works in every app: a tap shows **Android's built-in volume panel**; touch-and-hold then drag parks the handle on the left or right edge. A Quick Settings tile (M3) does the same as a tap. EdgeVol never changes the volume itself (no drag-to-step). The specs live in [docs/](../docs/README.md); **docs are the source of truth**. Read the relevant doc before changing behavior.
 
 ## Stack & build
 - Kotlin, Jetpack Compose (Material 3; setup screen only), single `app` module, DataStore, Gradle Kotlin DSL + version catalog (`gradle/libs.versions.toml`). minSdk 26, targetSdk 36, compileSdk 37 (the Compose BOM requires it; do not lower it), JDK 17. Build tools: Gradle 9.8.1, AGP 9.4.1 (built-in Kotlin, so do **not** apply `org.jetbrains.kotlin.android`), Kotlin 2.4.21.
@@ -8,7 +8,7 @@ EdgeVol is a sideloaded Android app that puts **virtual volume keys** on the scr
 - Source root: `app/src/main/java/app/edgevol/`.
 
 ## Non-negotiable invariants
-- **No custom volume UI.** All volume changes go through `SystemVolume` (`adjustSuggestedStreamVolume` + `FLAG_SHOW_UI`), so Android shows its own panel.
+- **No custom volume UI.** The only volume interaction is `SystemVolume.showPanel()` (`adjustSuggestedStreamVolume(ADJUST_SAME)` + `FLAG_SHOW_UI`), so Android shows its own panel. EdgeVol does not change the volume itself.
 - **No `INTERNET` permission**, no analytics, ads or tracking SDKs. The only user-granted capability is the accessibility service (no DND, `SYSTEM_ALERT_WINDOW` or foreground service).
 - Accessibility config keeps `canRetrieveWindowContent="false"`. The service never reads screen content.
 - The handle is the only overlay window: `TYPE_ACCESSIBILITY_OVERLAY` + `FLAG_NOT_FOCUSABLE`. Remove it when the service unbinds.

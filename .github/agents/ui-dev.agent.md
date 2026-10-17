@@ -17,7 +17,7 @@ Specs: `docs/04-ui-design.md` (setup screen, theming, logo), `docs/05-onboarding
 - Composables are **stateless** (state + callbacks per the contract). Only `MainActivity` wires them to `SystemSettings`, `PrefsRepository` and `SystemVolume`. Never call `AudioManager` or `WindowManager` from UI code.
 - Don't add dependencies or touch Gradle or the manifest. Send those as `Change requests`.
 - Run `./gradlew` only when the brief says `Build: allowed`.
-- Give `SetupScreen` `@Preview`s for: service off, service on, dark and light. They live in `app/src/debug/java/app/edgevol/ui/` (you own that path; `ui-tooling` is `debugImplementation` only), never in `src/main`.
+- Give `SetupScreen` `@Preview`s for its three states (off, enabled but not running, running), dark and light. They live in `app/src/debug/java/app/edgevol/ui/` (you own that path; `ui-tooling` is `debugImplementation` only), never in `src/main`.
 - Content descriptions on icons, ≥ 48 dp touch targets, font scaling, and *Remove animations* respected.
 
 ## Return
