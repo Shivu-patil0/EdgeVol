@@ -3,6 +3,8 @@ package app.edgevol.overlay
 import app.edgevol.data.HandleSide
 import app.edgevol.data.Prefs
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /** What the handle view should do in response to a gesture event. */
@@ -120,4 +122,32 @@ internal object HandleSnap {
         val max = HandleDefaults.POSITION_MAX_PERCENT.toInt()
         return (centreYPx / screenHeightPx * 100f).roundToInt().coerceIn(min, max)
     }
+
+    /**
+     * Window top for a handle centred at [pct] percent of the screen height. The handle stays fully
+     * on screen and its centre stays inside the allowed percent range, so the same percent gives
+     * the same relative height in portrait and landscape.
+     */
+    fun windowTopPx(pct: Float, screenHeightPx: Int, handleHeightPx: Int): Int {
+        if (screenHeightPx <= 0) return 0
+        val half = handleHeightPx / 2
+        val minY = max(0, (HandleDefaults.POSITION_MIN_PERCENT / 100f * screenHeightPx).roundToInt() - half)
+        val maxCentre = (HandleDefaults.POSITION_MAX_PERCENT / 100f * screenHeightPx).roundToInt()
+        val maxY = max(minY, min(screenHeightPx - handleHeightPx, maxCentre - half))
+        return ((pct / 100f * screenHeightPx).roundToInt() - half).coerceIn(minY, maxY)
+    }
+
+    /**
+     * Full-display size for the current orientation. The display's long and short sides never
+     * change, so this is right even when [displayWidthPx] x [displayHeightPx] still describes the
+     * previous rotation (seen during onConfigurationChanged). [landscape] null = unknown: as read.
+     */
+    fun orientedSize(displayWidthPx: Int, displayHeightPx: Int, landscape: Boolean?): ScreenSize {
+        if (landscape == null) return ScreenSize(displayWidthPx, displayHeightPx)
+        val long = max(displayWidthPx, displayHeightPx)
+        val short = min(displayWidthPx, displayHeightPx)
+        return if (landscape) ScreenSize(long, short) else ScreenSize(short, long)
+    }
 }
+
+internal data class ScreenSize(val widthPx: Int, val heightPx: Int)

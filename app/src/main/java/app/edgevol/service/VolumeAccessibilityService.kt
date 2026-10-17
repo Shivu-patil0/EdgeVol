@@ -77,7 +77,7 @@ class VolumeAccessibilityService : AccessibilityService() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        overlay?.relayout()
+        overlay?.relayout(newConfig)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

@@ -1,6 +1,7 @@
 package app.edgevol.overlay
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.Build
 import android.util.DisplayMetrics
@@ -29,6 +30,7 @@ internal class OverlayController(
     private val windowManager: WindowManager = context.getSystemService(WindowManager::class.java)
     private var side: HandleSide = initial.side
     private var positionPercent: Float = initial.positionPct.toFloat()
+    private var landscape: Boolean? = isLandscape(context.resources.configuration)
 
     private var view: EdgeHandleView? = null
     private var params: WindowManager.LayoutParams? = null
@@ -97,19 +99,19 @@ internal class OverlayController(
         }
     }
 
-    /** Recomputes size and position from the current screen (e.g. after rotation). */
-    fun relayout() {
+    /** Recomputes size and position for [newConfig] (e.g. after rotation). */
+    fun relayout(newConfig: Configuration) {
+        landscape = isLandscape(newConfig)
         dragging = false
         applyPlacement()
     }
 
     private fun beginReposition() {
         val layoutParams = params ?: return
-        val screenWidth = screenWidthPx()
-        val screenHeight = screenHeightPx()
-        if (screenWidth <= 0 || screenHeight <= 0) return
+        val screen = screenSize()
+        if (screen.widthPx <= 0 || screen.heightPx <= 0) return
         // Switch to absolute TOP|LEFT coordinates at the handle's current top-left.
-        dragX = if (side == HandleSide.RIGHT) (screenWidth - layoutParams.width).toFloat() else 0f
+        dragX = if (side == HandleSide.RIGHT) (screen.widthPx - layoutParams.width).toFloat() else 0f
         dragY = layoutParams.y.toFloat()
         dragging = true
         layoutParams.gravity = Gravity.TOP or Gravity.LEFT
@@ -120,12 +122,11 @@ internal class OverlayController(
     private fun repositionBy(dxPx: Float, dyPx: Float) {
         if (!dragging) return
         val layoutParams = params ?: return
-        val screenWidth = screenWidthPx()
-        val screenHeight = screenHeightPx()
+        val screen = screenSize()
         dragX += dxPx
         dragY += dyPx
-        layoutParams.x = dragX.roundToInt().coerceIn(0, max(0, screenWidth - layoutParams.width))
-        layoutParams.y = dragY.roundToInt().coerceIn(0, max(0, screenHeight - layoutParams.height))
+        layoutParams.x = dragX.roundToInt().coerceIn(0, max(0, screen.widthPx - layoutParams.width))
+        layoutParams.y = dragY.roundToInt().coerceIn(0, max(0, screen.heightPx - layoutParams.height))
         updateLayout(layoutParams)
     }
 
@@ -137,9 +138,9 @@ internal class OverlayController(
             applyPlacement()
             return
         }
-        val screenHeight = screenHeightPx()
-        side = HandleSnap.sideFor(fingerRawX, screenWidthPx())
-        val pct = HandleSnap.positionPct(layoutParams.y + layoutParams.height / 2f, screenHeight)
+        val screen = screenSize()
+        side = HandleSnap.sideFor(fingerRawX, screen.widthPx)
+        val pct = HandleSnap.positionPct(layoutParams.y + layoutParams.height / 2f, screen.heightPx)
         positionPercent = pct.toFloat()
         applyPlacement()
         Log.d(TAG, "snap: side=$side pct=$pct")
@@ -177,42 +178,22 @@ internal class OverlayController(
         val density = context.resources.displayMetrics.density
         val widthPx = (HandleDefaults.TOUCH_WIDTH_DP * density).roundToInt()
         val heightPx = (HandleDefaults.HEIGHT_DP * density).roundToInt()
-        val screenHeight = screenHeightPx()
         layoutParams.width = widthPx
         layoutParams.height = heightPx
         layoutParams.gravity = Gravity.TOP or (if (side == HandleSide.RIGHT) Gravity.RIGHT else Gravity.LEFT)
         layoutParams.x = 0
-        if (screenHeight <= 0) {
-            layoutParams.y = 0
-            return
-        }
-        val centre = (positionPercent / 100f * screenHeight).roundToInt()
-        // Percent positions the handle's centre. The whole handle must stay on screen AND its centre
-        // must stay within the percent range, so the stored percent always matches the real position.
-        val minPercentCentre = (HandleDefaults.POSITION_MIN_PERCENT / 100f * screenHeight).roundToInt()
-        val maxPercentCentre = (HandleDefaults.POSITION_MAX_PERCENT / 100f * screenHeight).roundToInt()
-        val minY = max(0, minPercentCentre - heightPx / 2)
-        val maxY = max(minY, minOf(screenHeight - heightPx, maxPercentCentre - heightPx / 2))
-        val y = (centre - heightPx / 2).coerceIn(minY, maxY)
-        layoutParams.y = y
-        // Write the effective position back so stored percent and real position agree.
-        positionPercent = ((y + heightPx / 2f) / screenHeight * 100f)
-            .coerceIn(HandleDefaults.POSITION_MIN_PERCENT, HandleDefaults.POSITION_MAX_PERCENT)
+        // positionPercent is never rewritten here, so rotating back and forth returns to the same spot.
+        layoutParams.y = HandleSnap.windowTopPx(positionPercent, screenSize().heightPx, heightPx)
     }
 
-    private fun screenHeightPx(): Int =
-        if (Build.VERSION.SDK_INT >= 30) {
-            windowManager.currentWindowMetrics.bounds.height()
+    private fun screenSize(): ScreenSize {
+        val raw = if (Build.VERSION.SDK_INT >= 30) {
+            windowManager.currentWindowMetrics.bounds.let { ScreenSize(it.width(), it.height()) }
         } else {
-            realMetricsPreR().heightPixels
+            realMetricsPreR().let { ScreenSize(it.widthPixels, it.heightPixels) }
         }
-
-    private fun screenWidthPx(): Int =
-        if (Build.VERSION.SDK_INT >= 30) {
-            windowManager.currentWindowMetrics.bounds.width()
-        } else {
-            realMetricsPreR().widthPixels
-        }
+        return HandleSnap.orientedSize(raw.widthPx, raw.heightPx, landscape)
+    }
 
     @Suppress("DEPRECATION")
     private fun realMetricsPreR(): DisplayMetrics {
@@ -223,5 +204,11 @@ internal class OverlayController(
 
     private companion object {
         const val TAG = "EdgeVol"
+
+        fun isLandscape(config: Configuration): Boolean? = when (config.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> true
+            Configuration.ORIENTATION_PORTRAIT -> false
+            else -> null
+        }
     }
 }

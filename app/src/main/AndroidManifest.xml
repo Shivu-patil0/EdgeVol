@@ -10,8 +10,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EdgeVol">
 
+        <!-- Hidden from Recents: MIUI force-stops apps swiped away there, and a force-stopped
+             accessibility service stays off until the user re-enables it. -->
         <activity
             android:name=".MainActivity"
+            android:excludeFromRecents="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

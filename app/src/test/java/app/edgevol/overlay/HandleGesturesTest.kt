@@ -349,4 +349,50 @@ class HandleGesturesTest {
         assertEquals(40, HandleSnap.positionPct(500f, 0))
         assertEquals(40, HandleSnap.positionPct(500f, -1))
     }
+
+    // Rotation: POCO X2 is 1080 x 2400 px; the 72 dp handle is 198 px tall.
+
+    @Test
+    fun `orientedSize swaps a stale portrait reading when the screen is landscape`() {
+        assertEquals(ScreenSize(2400, 1080), HandleSnap.orientedSize(1080, 2400, landscape = true))
+        assertEquals(ScreenSize(2400, 1080), HandleSnap.orientedSize(2400, 1080, landscape = true))
+    }
+
+    @Test
+    fun `orientedSize swaps a stale landscape reading when the screen is portrait`() {
+        assertEquals(ScreenSize(1080, 2400), HandleSnap.orientedSize(2400, 1080, landscape = false))
+        assertEquals(ScreenSize(1080, 2400), HandleSnap.orientedSize(1080, 2400, landscape = false))
+    }
+
+    @Test
+    fun `orientedSize keeps the reading when the orientation is unknown`() {
+        assertEquals(ScreenSize(1500, 1400), HandleSnap.orientedSize(1500, 1400, landscape = null))
+    }
+
+    @Test
+    fun `the same percent sits at the same relative height in portrait and landscape`() {
+        for (pct in listOf(10f, 25f, 40f, 75f, 90f)) {
+            val portraitCentre = HandleSnap.windowTopPx(pct, 2400, 198) + 99
+            val landscapeCentre = HandleSnap.windowTopPx(pct, 1080, 198) + 99
+            assertEquals(pct, portraitCentre / 2400f * 100f, 0.5f)
+            assertEquals(pct, landscapeCentre / 1080f * 100f, 0.5f)
+        }
+    }
+
+    @Test
+    fun `a handle at the top of a portrait screen stays at the top in landscape`() {
+        assertEquals(141, HandleSnap.windowTopPx(10f, 2400, 198))
+        assertEquals(9, HandleSnap.windowTopPx(10f, 1080, 198))
+    }
+
+    @Test
+    fun `windowTopPx keeps the whole handle on screen when it is taller than the percent margin`() {
+        assertEquals(0, HandleSnap.windowTopPx(10f, 300, 198))
+        assertEquals(102, HandleSnap.windowTopPx(90f, 300, 198))
+    }
+
+    @Test
+    fun `windowTopPx is zero for a non-positive height`() {
+        assertEquals(0, HandleSnap.windowTopPx(40f, 0, 198))
+    }
 }
