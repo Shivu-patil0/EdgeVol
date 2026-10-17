@@ -158,6 +158,11 @@ private fun NotRunningContent(onOpenSettings: () -> Unit) {
             )
         }
         Text(
+            text = stringResource(R.string.setup_not_running_retry),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
             text = stringResource(R.string.setup_not_running_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

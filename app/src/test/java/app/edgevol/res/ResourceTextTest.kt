@@ -151,10 +151,19 @@ class ResourceTextTest {
     }
 
     @Test
-    fun `setup ready message explains tap again to close and does not claim volume changes`() {
+    fun `setup ready message explains tap to show panel and hold to drag without close or volume claims`() {
         val ready = stringResource("res/values/strings.xml", "setup_ready_message")
-        assertTrue(ready, ready.contains("tap again to close it"))
+        assertTrue(ready, ready.contains("Tap it to show your phone's volume panel"))
+        assertTrue(ready, ready.contains("touch and hold"))
+        assertFalse(ready, ready.contains("close", ignoreCase = true))
         assertFalse(ready, ready.contains("change the volume", ignoreCase = true))
+    }
+
+    @Test
+    fun `setup not running retry string exists and asks to switch off and on once more`() {
+        val retry = stringResource("res/values/strings.xml", "setup_not_running_retry")
+        assertTrue(retry.isNotBlank())
+        assertTrue(retry, retry.contains("off and on once more"))
     }
 
     // Source-text guards
