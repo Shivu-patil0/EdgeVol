@@ -5,23 +5,26 @@
 | Tool | Status on this machine | Plan |
 |---|---|---|
 | JDK 17 | ✅ present (JDK 17.0.15) | Use as Gradle JDK |
-| Android SDK + `adb` | ❌ not installed | Install before M1 (options below) |
+| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). No emulator installed; use a phone with USB debugging |
 | Gradle | via wrapper (`./gradlew`) | Generated in M1; no global install needed |
 | Node / `npx` | ✅ present | Only used for the `skills` CLI |
 
-**Install options for the Android SDK** (pick one):
+**Install options for the Android SDK** (pick **one**; options 2a and 2b are alternatives, not steps):
 
-1. **Android Studio** (simplest): includes the SDK, emulator and device manager.
-2. **Command line only:**
-   ```bash
-   # Option 2a: Google's android CLI (see .agents/skills/android-cli/SKILL.md)
-   curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh | bash
+1. **Android Studio**: a GUI app that bundles the SDK, emulator and device manager. Download it from developer.android.com/studio, or run `brew install --cask android-studio` (which downloads the same app). It's optional for our agent workflow, which runs from the terminal.
+2. **Command line only** (enough to build, install, test and run an emulator):
+   - **2a. Google's `android` CLI** (recommended; the repo skill `android-cli` is written for it): one tool that installs SDK packages, creates projects, runs apps and manages emulators.
+     ```bash
+     curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh | bash
+     android sdk install platform-tools platforms/android-36 build-tools/36.0.0
+     ```
+   - **2b. Homebrew + `sdkmanager`** (fallback if 2a fails; no `curl | bash`):
+     ```bash
+     brew install --cask android-commandlinetools
+     sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+     ```
+   - **Emulator (optional with a physical phone):** add `"emulator" "system-images;android-36;google_apis;arm64-v8a"` to the packages (about 10 GB). With USB debugging on your phone, you can skip it.
 
-   # Option 2b: Homebrew command-line tools + sdkmanager
-   brew install --cask android-commandlinetools
-   sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
-              "emulator" "system-images;android-36;google_apis;arm64-v8a"
-   ```
    Then set `sdk.dir` in `local.properties` (git-ignored).
 
 ## Agent skills (repo-scoped)
