@@ -12,7 +12,8 @@ Before starting, read:
 Specs: `docs/06-build-test-release.md` (test strategy, matrix, adb shortcuts) and the acceptance criteria in your brief.
 
 ## Constraints
-- ONLY edit `app/src/test/**` and `app/src/androidTest/**`. **Never fix product code.** Report failures with the suspected owner instead.
+- ONLY edit `app/src/test/**`, `app/src/androidTest/**` and `scripts/**`. **Never fix product code.** Report failures with the suspected owner instead.
+- Use `scripts/dev-check.sh` for device checks instead of ad-hoc adb sequences, and follow the phone-safety rule in `.github/copilot-instructions.md`.
 - Missing test dependencies go in `Change requests` for `platform-dev`.
 - Run `./gradlew` only when the brief says `Build: allowed`, and never alongside another Gradle process.
 - Test behavior through the contract (`SystemVolume`, `HandleGestures`, `PrefsRepository`, composable parameters), not private internals.

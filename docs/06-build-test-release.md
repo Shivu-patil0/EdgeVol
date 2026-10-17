@@ -50,9 +50,11 @@ npx skills experimental_install # restore from skills-lock.json on a fresh clone
 
 ## Build & run
 
-Prefix each command with `JAVA_HOME=<path to JDK 17>`. The full M1 check is:
-`./gradlew testDebugUnitTest lintDebug assembleDebug :app:processDebugManifest :app:processReleaseManifest`
-(plus `./gradlew assembleRelease` for R8). Lint must report 0 errors; warnings are reported, not blocking.
+Prefix each command with `JAVA_HOME=<path to JDK 17>`. **Inner loop** while coding: `./gradlew testDebugUnitTest --tests '<affected classes>'` (warm daemon, no `clean`). **Full check** once before each commit:
+`./gradlew testDebugUnitTest lintDebug assembleDebug :app:processDebugManifest :app:processReleaseManifest assembleRelease`.
+Lint must report 0 errors; warnings are reported, not blocking.
+
+**Device loop in one command:** `scripts/dev-check.sh` prints the device, foreground app, service state (listed / bound / crashed), handle window frame and recent EdgeVol and volume-panel logs (about 2 s). `scripts/dev-check.sh install` builds, installs with `adb install -r` and prints the same (about 18 s). `scripts/dev-check.sh logs` prints only the logs. It reconnects Wi-Fi adb through mDNS, sends no input, takes no screenshots and reads only EdgeVol and volume-panel log lines.
 
 ```bash
 ./gradlew assembleDebug                  # build

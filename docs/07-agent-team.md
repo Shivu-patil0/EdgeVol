@@ -56,6 +56,24 @@ sequenceDiagram
     M->>U: Gate 2: summary, tests, risks, rulings
 ```
 
+## Lanes: fast vs. full
+
+M2.1 (a three-owner fix) took about 80 minutes, mostly in hand-offs (nine separate runs, each re-reading the docs) and per-wave reviews, not in Gradle (an incremental build is 6–18 s). So the manager picks a lane:
+
+| | **Fast lane** (fixes, small features) | **Full lane** (milestones, risky changes) |
+|---|---|---|
+| Use when | No new dependency or permission, no manifest change, no contract change beyond adding a field, ≲ 8 files | New milestone, new dependency or permission, manifest or contract change, service lifecycle, or "big" |
+| Plan and Gate 1 | Skipped (the request is the approval) | analyst PLAN, then you approve |
+| Briefs | One brief per owner with its whole slice, in parallel | Waves A, B, C |
+| Tests | Owners add unit tests for their own code | qa writes them |
+| Build | One builder, **inner loop** only: `--tests '<affected>'` | Full check per wave |
+| Review | One analyst REVIEW over the whole diff at the end | After each risky wave, otherwise once at the end |
+| Rough time | 10–20 min | 45–90 min |
+
+**Inner loop vs. full check:** while coding, only the affected unit tests run (`./gradlew testDebugUnitTest --tests '<classes>'`, warm Gradle daemon, no `clean`). The full check (`testDebugUnitTest lintDebug assembleDebug`, both manifests, `assembleRelease`) runs once before each commit.
+
+**Device loop:** [`scripts/dev-check.sh`](../scripts/dev-check.sh) reconnects Wi-Fi adb, optionally builds and installs, and prints the device, foreground app, service state (listed / bound / crashed), handle window frame and the filtered EdgeVol and volume-panel logs. `install` takes about 18 s end to end.
+
 ## Guardrails
 
 | Problem | Guardrail |
@@ -66,7 +84,8 @@ sequenceDiagram
 | Specialists can't ask you questions | They return `Questions:`; the manager answers from the docs or asks you |
 | Endless fix loops | Max 2 fix rounds per task, then the manager rules and records `Ruling:` in [progress.md](progress.md) |
 | Agents spawning agents | Only the manager delegates (`agents:` list; VS Code blocks nested subagents by default) |
-| Token cost | Each hand-off is a fresh context. For ≤ 2-file, one-owner changes the manager skips planning, or you call the specialist directly |
+| Token cost | Each hand-off is a fresh context: use the fast lane, or call a specialist directly for a one-owner change |
+| Agents acting on your personal phone | Phone-safety rule in [`copilot-instructions.md`](../.github/copilot-instructions.md): input only after verifying the foreground app is EdgeVol, Settings or the launcher; never other apps; only EdgeVol and volume-panel log lines; no uninstall, reboot or settings changes. (In M2.1 one probe tap was sent without that check, which is why the rule is now explicit.) |
 
 ## How to use it
 

@@ -5,6 +5,8 @@ EdgeVol is a sideloaded Android app that puts a **volume button** on the screen 
 ## Stack & build
 - Kotlin, Jetpack Compose (Material 3; setup screen only), single `app` module, DataStore, Gradle Kotlin DSL + version catalog (`gradle/libs.versions.toml`). minSdk 26, targetSdk 36, compileSdk 37 (the Compose BOM requires it; do not lower it), JDK 17. Build tools: Gradle 9.8.1, AGP 9.4.1 (built-in Kotlin, so do **not** apply `org.jetbrains.kotlin.android`), Kotlin 2.4.21.
 - `./gradlew assembleDebug` · `./gradlew testDebugUnitTest` · `./gradlew connectedDebugAndroidTest` (more in [docs/06](../docs/06-build-test-release.md)).
+- **Inner loop** (while coding): `./gradlew testDebugUnitTest --tests '<affected classes>'`. **Full check** (once, before commit): `./gradlew testDebugUnitTest lintDebug assembleDebug :app:processDebugManifest :app:processReleaseManifest assembleRelease`. No `clean` unless the build is broken.
+- **Device check in one command:** `scripts/dev-check.sh [status|install|logs]` (reconnects Wi-Fi adb, installs, prints service state, handle window and filtered logs).
 - Source root: `app/src/main/java/app/edgevol/`.
 
 ## Non-negotiable invariants
@@ -23,12 +25,13 @@ A **manager** agent coordinates four specialists ([docs/07](../docs/07-agent-tea
 | `manager` | `docs/**`, `.github/**`, `.gitignore`, `README.md`, git commits |
 | `platform-dev` | `settings.gradle.kts`, `build.gradle.kts`, `gradle/**`, `gradlew*`, `app/build.gradle.kts`, `app/proguard-rules.pro`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/app/edgevol/{audio,overlay,service,data,system}/**`, `app/src/main/res/xml/**`, `app/src/main/res/values/strings_system.xml` |
 | `ui-dev` | `app/src/main/java/app/edgevol/{ui/**,MainActivity.kt}`, `app/src/debug/java/app/edgevol/ui/**`, `app/src/main/res/{drawable*,mipmap*}/**`, `app/src/main/res/values/{strings,colors,themes}.xml` |
-| `qa` | `app/src/test/**`, `app/src/androidTest/**` |
+| `qa` | `app/src/test/**`, `app/src/androidTest/**`, `scripts/**` (in the manager's fast lane, `platform-dev` and `ui-dev` may also add unit tests for their own code under `app/src/test/**`) |
 | `analyst` | nothing (read-only) |
 
 ## Collaboration rules
 - **One Gradle process at a time.** Only the agent whose brief says `Build: allowed` may run `./gradlew`.
 - The UI ↔ platform API is the contract in [docs/03 § Contract](../docs/03-architecture.md#ui--platform-contract). Changing it requires the manager's approval, and the report must list it under `Contract changes`.
 - Specialists can't ask the user questions. They return `Questions:` to the manager instead of guessing on product decisions.
+- **Phone safety (all agents):** the test phone is the user's personal phone. Send input (`adb shell input ...`) only after verifying the foreground app is EdgeVol, Settings or the launcher. Never open, tap or screenshot other apps, never uninstall, reboot or change phone settings, and never read logs beyond the EdgeVol and volume-panel lines.
 - Scratch files go in `.agent-work/` (git-ignored). Progress and rulings go in [docs/progress.md](../docs/progress.md).
 - Only comment code that needs clarification. Skip formatting-only changes.
