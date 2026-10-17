@@ -62,13 +62,34 @@ Lint warnings (non-blocking): `OldTargetApi` (targetSdk 36 while compileSdk is 3
 - Ruling: the service description and setup text mention the Quick Settings tile before it exists (M3) — spec text per docs/05 — users see a tile mention for two milestones.
 - Note: the Gradle wrapper download from the GitHub release-assets redirect timed out in the JVM on first run; the verified zip was pre-seeded into `~/.gradle/wrapper/dists`. Retry on a fresh machine.
 
-## M2 · Core engine ⏳ (in progress)
+## M2 · Core engine ⏳ (built and verified over adb; touch gestures await the user's manual script)
 
-Plan: user approved all defaults at Gate 1. Base commit for review diffs: `4cac952` (after committing the pending roadmap change).
+Plan: user approved all defaults at Gate 1. Review diffs were taken against `4e71f8e` (after the M0 docs commits).
 
 | Task | Owner | Result | Commit |
 |---|---|---|---|
-| M0 Docs/process prep (03/04/05/06/07, ownership) | manager | Done | see git log |
+| M0 Docs/process prep (03/04/05/06/07, ownership) | manager | Done | `4cac952`, `4e71f8e` |
+| A1 Debug-only `ui-tooling` + `ui-tooling-preview` | platform-dev | Done | `70e9c36` |
+| A2 `SystemVolume`, `HandleGestures`, `SetupStatus.showRestrictedSettingsHelp` | platform-dev | Done | `8a73ca2` |
+| A3 Plain-language service description, config without event types | platform-dev | Done | `94b7c41` |
+| P3 `HandleDefaults`, `EdgeHandleView`, `OverlayController` | platform-dev | Done (+1 compile fix, 2 review fixes) | `153e84b` |
+| P4 Real `VolumeAccessibilityService` | platform-dev | Done | `496285f` |
+| U1 `SetupScreen` M2 form, `MainActivity`, copy | ui-dev | Done | `89645ba` |
+| U2 Debug-only `@Preview`s | ui-dev | Done (compile-checked only) | `07cea23` |
+| Q1 Unit tests (56 new) | qa | Done | `53532e4` |
+| Q2 Full Gradle check | qa | PASS (second run; first run found one wrong import) | n/a |
+| Q3 Automatic device checks | qa | PASS except the `kill -9` restart check (not possible on this phone) | n/a |
+
+Verification: `JAVA_HOME=<JDK 17> ./gradlew testDebugUnitTest lintDebug assembleDebug :app:processDebugManifest :app:processReleaseManifest assembleRelease` PASS, **80 tests, 0 failures** (HandleGestures 36, SystemVolume 6, resource text 8, status gating 6, EnabledServices 24). Lint 0 errors / 8 warnings: the 4 from M1 plus `ClickableViewAccessibility` (`EdgeHandleView`), `ViewConstructor` (`EdgeHandleView`), `RtlHardcoded` ×2 (`OverlayController`; physical edge is intended). Merged manifests: no `INTERNET`, only the androidx dynamic-receiver permission; release exports `MainActivity`, the service (`BIND_ACCESSIBILITY_SERVICE`) and `ProfileInstallReceiver` (`DUMP`); debug additionally exports `androidx.compose.ui.tooling.PreviewActivity`; release APK (≈945 KiB, unsigned) holds no tooling classes.
+
+**Device verification (POCO X2, Android 11, MIUI 12.5, gesture nav) by adb:**
+- ✅ `install -r` keeps the service enabled (MIUI did not switch it off) and the service rebinds by itself ("handle added" in logcat).
+- ✅ **F4:** `dumpsys accessibility` lists EdgeVol under *Bound services* with `eventTypes=` empty and `capabilities=0`, so a service with no `accessibilityEventTypes` connects and draws its handle on this phone. No fallback needed.
+- ✅ Exactly one window `EdgeVolHandle`: `ty=2032`, `NOT_FOCUSABLE | LAYOUT_IN_SCREEN | LAYOUT_NO_LIMITS`, `mFrame=[1014,861][1080,1059]` (66×198 px = 24×72 dp at 440 dpi, on the right edge, centre y = 960 = 40% of 2400). A screenshot crop showed the faint bar. It stays the only EdgeVol overlay with the app in the background.
+- ✅ Setup screen shows **On**, the new *Try it* card and the new ready text.
+- ⬜ `kill -9` restart resilience: `run-as app.edgevol kill` reports "unknown pid" and plain `adb shell kill` is not permitted, so it cannot be scripted on this phone. Do it by swiping the app away / running the MIUI cleaner (script step 16).
+- ⬜ Touch gestures, haptics, back-gesture conflict, other apps and the shade, rotation, screen off, reboot, TalkBack: the user's manual script.
+- Device fact: `input keyevent` is also denied (no `INJECT_EVENTS`); ring/notification/system streams were at 0 and muted when the checks ran (silent mode), music was 27.
 
 - Ruling: R1 handle position is in memory only until M3 (`HandleDefaults`: RIGHT, 40%, 72 dp, 35%) — user-approved default — position resets when the service restarts until M3.
 - Ruling: R2 *Try it* shows in both Off and On states — needs no permission, isolates `SystemVolume` from overlay bugs.
@@ -77,3 +98,10 @@ Plan: user approved all defaults at Gate 1. Base commit for review diffs: `4cac9
 - Ruling: R5 window flags add `FLAG_LAYOUT_IN_SCREEN` and title `EdgeVolHandle` (docs/03) — y = percent of real screen height and the window is greppable in `dumpsys`.
 - Ruling: F4/R6 the accessibility config drops `accessibilityEventTypes`; fallback is `typeWindowStateChanged` + `packageNames=app.edgevol` — verified on the phone.
 - Ruling: F3 service description / in-app disclosure rewritten in plain language (no `canRetrieveWindowContent`, no tile sentence until M3).
+- Ruling: F4 outcome — no fallback needed; the service connects and draws the handle with no `accessibilityEventTypes` on the POCO X2 (Android 11) — Android 13+/other OEMs are untested; fallback R6 stays documented in docs/03.
+- Ruling: accept the 4 new lint warnings (`ClickableViewAccessibility`, `ViewConstructor`, `RtlHardcoded` ×2) — the handle is a gesture-only view built in code, `performClick()` is reached via `handle()` on tap, and RIGHT/LEFT gravity is deliberately physical — warnings are non-blocking since M1; a `@Suppress` with a comment can come in M4 polish.
+- Ruling: `HandleDefaults.HandleSide { Left, Right }` in `overlay` is M2-only and internal — M3 must reconcile it with `app.edgevol.data.HandleSide { LEFT, RIGHT }` from the contract — naming clash otherwise.
+- Ruling: `OverlayController` writes the effective (screen-clamped) percent back after each layout (review fix: no dead zone on short screens) — after a landscape rotation on a short screen the stored percent can change slightly — acceptable until M3 persists the position.
+- Ruling: the handle view disables its click sound (`isSoundEffectsEnabled = false`), so taps give only haptic feedback — platform-dev choice, not in the spec — revisit in M4 haptics polish.
+- Ruling: no separate final full-diff review after the build (waves A and B were each reviewed by the analyst; later changes were one import fix and two small review fixes, read by the manager) — the user's manual run is the real gate — a missed bug would show in the manual script.
+- Note: landscape cutout handling (`layoutInDisplayCutoutMode` not set), rotation timing of `currentWindowMetrics` in `onConfigurationChanged`, and whether MIUI honours gesture-exclusion rects for an accessibility overlay are unverified until the user's script steps 12 and 14.

@@ -51,7 +51,7 @@ EdgeVol is a minimal Android app that replaces the hardware volume keys with an 
 |---|---|---|
 | **M0 Setup** | Repo-scoped skills and agent team, documentation, temporary logo, git | ✅ done |
 | **M1 Skeleton** | Gradle project, theme, setup screen with live service status | ✅ done (build, unit tests, lint and manifest verified; status detection and enable flow verified on a POCO X2, see [progress](progress.md)) |
-| **M2 Core engine** | `VolumeAccessibilityService`, edge handle overlay, gestures (tap → panel, drag → steps), `SystemVolume`, `ui-tooling` previews | ⏳ next |
+| **M2 Core engine** | `VolumeAccessibilityService`, edge handle overlay, gestures (tap → panel, drag → steps), `SystemVolume`, `ui-tooling` previews | ⏳ built; unit tests, lint, manifests and adb checks pass on a POCO X2 (handle drawn, service binds with no event types); touch gestures await the manual script, see [progress](progress.md#m2--core-engine-) |
 | **M3 Triggers & settings** | Quick Settings tile, handle customization (side, position, size, opacity) | ⬜ |
 | **M4 Polish** | Haptics, accessibility actions on the handle, adaptive launcher icon from the logo, dark/light, dynamic color | ⬜ |
 | **M5 Test & ship** | Unit + Compose UI tests, emulator/device matrix, signed release APK | ⬜ |
