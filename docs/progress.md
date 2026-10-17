@@ -264,3 +264,4 @@ Checks: 223 tests, 0 failures (unit-test task ≈ 25 s warm, the first Robolectr
 - Root `README.md` added for GitHub.
 - History rewritten before the first push (user decision): all commits authored with Shivu-patil0's GitHub noreply address, and an old local JDK path removed from docs/06. A bundle of the old history is kept outside the repo (`~/.android/edgevol/history-backup-before-rewrite.bundle`).
 - Pushed to a private GitHub repo under Shivu-patil0.
+- Made public with a GitHub Release v1.0.0 (`EdgeVol.apk`, signed with the personal key; README links `releases/latest/download/EdgeVol.apk`). Before going public, each copied agent skill got its upstream license file (`LICENSE.txt`: Apache-2.0 for android/skills and chrisbanes/skills, MIT for wshobson/agents).

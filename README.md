@@ -15,9 +15,20 @@ EdgeVol is a small, private Android app (Android 8.0+) for phones with broken vo
 
 ![How it works](docs/images/panel-mockup.svg)
 
+## Download
+
+**[⬇ Download EdgeVol.apk](https://github.com/Shivu-patil0/EdgeVol/releases/latest/download/EdgeVol.apk)** (≈ 1.2 MB, Android 8.0+, [all releases](https://github.com/Shivu-patil0/EdgeVol/releases))
+
+Open the downloaded file on the phone. What to expect, because EdgeVol isn't from the Play Store:
+
+- Android asks to allow installs from your browser or file manager (*Install unknown apps*): allow it once.
+- **Google Play Protect may warn** about an app from an unknown developer, especially because it uses an accessibility service: tap *More details* → *Install anyway*. EdgeVol has no internet permission and never reads the screen.
+- Android 13+: the Accessibility toggle may be greyed out at first; see step 2 below.
+- Updates install over the old version only if they come from this page (same signing key).
+
 ## Install (sideload)
 
-1. Build the APK (below) or take a release APK, and install it: `adb install -r app-release.apk` or open the file on the phone.
+1. Install the APK from **Download** above (or `adb install -r EdgeVol.apk`, or build it yourself, below).
 2. Open **EdgeVol** → **Enable** → *Accessibility* → **EdgeVol** → On. The handle appears at once.
    On Android 13+, if the toggle is greyed out: *App info* → ⋮ → *Allow restricted settings*.
 3. **Xiaomi / Redmi / POCO:** follow the *Keep EdgeVol running* card (allow Autostart, lock EdgeVol in Recents), or clearing recent apps stops it.
