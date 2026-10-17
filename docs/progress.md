@@ -19,4 +19,6 @@ Maintained by the `manager` agent. One section per milestone: tasks, results, an
 
 ## M1 · Skeleton ⏳
 
-_Not started. Blocked on the Android SDK being installed (see [06](06-build-test-release.md#toolchain))._
+_Ready to start._ Android SDK installed ([06](06-build-test-release.md#toolchain)); no phone connected yet (`adb devices` is empty) and no emulator installed.
+
+- Ruling: toolchain = Google's `android` CLI, SDK packages only (no emulator, no Android Studio) — user decision — on-device checks need a phone with USB debugging, or an emulator added later.
