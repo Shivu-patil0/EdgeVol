@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder for the M1 toolchain proof. P3 replaces it with the real manifest. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application />
+
+</manifest>
