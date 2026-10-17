@@ -226,4 +226,90 @@ class PrefsRepositoryTest {
         assertEquals("RIGHT", m[side])
         assertEquals(10, m[position])
     }
+
+    // M3: size and opacity
+
+    private val sizeKey = stringPreferencesKey("size")
+    private val opacityKey = intPreferencesKey("opacity_pct")
+
+    @Test
+    fun `Prefs defaults are size M and opacity 35`() {
+        assertEquals(HandleSize.M, Prefs().size)
+        assertEquals(35, Prefs().opacityPct)
+    }
+
+    @Test
+    fun `handle sizes are 56, 72 and 120 dp tall`() {
+        assertEquals(56, HandleSize.S.heightDp)
+        assertEquals(72, HandleSize.M.heightDp)
+        assertEquals(120, HandleSize.L.heightDp)
+    }
+
+    @Test
+    fun `opacity 0 hides the handle and anything above shows it`() {
+        assertEquals(true, Prefs(opacityPct = 0).handleHidden)
+        assertEquals(false, Prefs(opacityPct = 1).handleHidden)
+        assertEquals(false, Prefs().handleHidden)
+    }
+
+    @Test
+    fun `toPrefs reads size and opacity`() {
+        val p = preferencesOf(sizeKey to "L", opacityKey to 60).toPrefs()
+        assertEquals(HandleSize.L, p.size)
+        assertEquals(60, p.opacityPct)
+    }
+
+    @Test
+    fun `toPrefs clamps opacity to 0 to 80`() {
+        assertEquals(80, preferencesOf(opacityKey to 120).toPrefs().opacityPct)
+        assertEquals(0, preferencesOf(opacityKey to -5).toPrefs().opacityPct)
+    }
+
+    @Test
+    fun `toPrefs falls back to defaults for an unknown size or a wrongly typed opacity`() {
+        val p = preferencesOf(sizeKey to "XL", stringPreferencesKey("opacity_pct") to "high").toPrefs()
+        assertEquals(HandleSize.M, p.size)
+        assertEquals(35, p.opacityPct)
+    }
+
+    @Test
+    fun `size and opacity survive a write and read round trip`() {
+        val repo = PrefsRepository(store())
+        runBlocking { repo.update { it.copy(size = HandleSize.S, opacityPct = 0) } }
+        val p = read(repo)
+        assertEquals(HandleSize.S, p.size)
+        assertEquals(0, p.opacityPct)
+    }
+
+    @Test
+    fun `saving a snap keeps the size and opacity chosen on the setup screen`() {
+        val repo = PrefsRepository(store())
+        runBlocking {
+            repo.update { it.copy(size = HandleSize.L, opacityPct = 70) }
+            repo.update { it.copy(side = HandleSide.LEFT, positionPct = 25) }
+        }
+        assertEquals(Prefs(HandleSide.LEFT, 25, HandleSize.L, 70), read(repo))
+    }
+
+    @Test
+    fun `update returns what was stored, including earlier saves and clamping`() {
+        val repo = PrefsRepository(store())
+        val stored = runBlocking {
+            repo.update { it.copy(side = HandleSide.LEFT) }
+            repo.update { it.copy(opacityPct = 500) }
+        }
+        assertEquals(Prefs(side = HandleSide.LEFT, opacityPct = 80), stored)
+    }
+
+    @Test
+    fun `back-to-back updates are applied in order, so the last value wins`() {
+        val repo = PrefsRepository(store())
+        val stored = runBlocking {
+            repo.update { it.copy(opacityPct = 0) }
+            repo.update { it.copy(opacityPct = 1) }
+            repo.update { it.copy(opacityPct = 0) }
+        }
+        assertEquals(0, stored.opacityPct)
+        assertEquals(true, read(repo).handleHidden)
+    }
 }

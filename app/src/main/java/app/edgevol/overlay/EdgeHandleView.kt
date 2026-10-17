@@ -40,6 +40,7 @@ internal class EdgeHandleView(
     context: Context,
     private val volume: SystemVolume,
     private var side: HandleSide,
+    private var idleOpacity: Float,
     private val repositionListener: RepositionListener,
 ) : View(context) {
     private val density = context.resources.displayMetrics.density
@@ -78,8 +79,15 @@ internal class EdgeHandleView(
         updateGestureExclusion()
     }
 
+    /** Idle opacity of the pill, 0..1. */
+    fun setIdleOpacity(value: Float) {
+        if (idleOpacity == value) return
+        idleOpacity = value
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
-        val idleAlpha = HandleDefaults.OPACITY * 255f
+        val idleAlpha = idleOpacity * 255f
         paint.alpha = if (held) 255 else (idleAlpha + (255f - idleAlpha) * widenFraction).roundToInt()
         val pillWidthPx = lerp(HandleDefaults.PILL_WIDTH_DP, HandleDefaults.PILL_WIDTH_ACTIVE_DP) * density
         // Hugs the edge when idle and drifts to the window centre as it widens (finger is not at the edge).

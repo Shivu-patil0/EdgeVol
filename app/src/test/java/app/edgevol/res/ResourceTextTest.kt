@@ -181,7 +181,34 @@ class ResourceTextTest {
     @Test
     fun `setup screen stays in Recents so MIUI users can lock it`() {
         val manifest = File(mainDir(), "AndroidManifest.xml").readText()
-        assertFalse(manifest.contains("excludeFromRecents"))
+        val mainActivity = manifest.substringAfter("android:name=\".MainActivity\"").substringBefore(">")
+        assertFalse(mainActivity.contains("excludeFromRecents"))
+    }
+
+    @Test
+    fun `quick settings tile service is guarded so only SystemUI can bind it`() {
+        val manifest = File(mainDir(), "AndroidManifest.xml").readText()
+        val tile = manifest.substringAfter("android:name=\".service.VolumeTileService\"").substringBefore("</service>")
+        assertTrue(tile, tile.contains("android:permission=\"android.permission.BIND_QUICK_SETTINGS_TILE\""))
+        assertTrue(tile, tile.contains("android.service.quicksettings.action.QS_TILE"))
+    }
+
+    @Test
+    fun `panel trampoline activity is not exported`() {
+        val manifest = File(mainDir(), "AndroidManifest.xml").readText()
+        val trampoline = manifest.substringAfter("android:name=\".system.PanelTrampolineActivity\"").substringBefore("/>")
+        assertTrue(trampoline, trampoline.contains("android:exported=\"false\""))
+    }
+
+    @Test
+    fun `tile and handle settings strings exist`() {
+        listOf(
+            "setup_ready_hidden_message", "setup_handle_title", "setup_handle_position",
+            "setup_handle_opacity", "setup_handle_opacity_off", "setup_tile_title",
+            "setup_tile_body", "setup_tile_button", "setup_tile_steps",
+        ).forEach { name -> assertTrue(name, stringResource("res/values/strings.xml", name).isNotBlank()) }
+        assertTrue(stringResource("res/values/strings_system.xml", "tile_label").isNotBlank())
+        assertTrue(stringResource("res/values/strings.xml", "setup_handle_opacity_off").contains("tile"))
     }
 
     // Source-text guards

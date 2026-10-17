@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.WindowManager
 import app.edgevol.audio.SystemVolume
 import app.edgevol.data.HandleSide
+import app.edgevol.data.HandleSize
 import app.edgevol.data.Prefs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -30,6 +31,8 @@ internal class OverlayController(
     private val windowManager: WindowManager = context.getSystemService(WindowManager::class.java)
     private var side: HandleSide = initial.side
     private var positionPercent: Float = initial.positionPct.toFloat()
+    private var size: HandleSize = initial.size
+    private var opacityPct: Int = initial.opacityPct
     private var landscape: Boolean? = isLandscape(context.resources.configuration)
 
     private var view: EdgeHandleView? = null
@@ -51,10 +54,31 @@ internal class OverlayController(
         override fun onCancel() = cancelReposition()
     }
 
+    /**
+     * Applies saved settings (start-up, or a change on the setup screen): shows, updates or removes
+     * the handle. Returns false only if the handle should be visible but could not be added.
+     */
+    fun apply(prefs: Prefs): Boolean {
+        side = prefs.side
+        positionPercent = prefs.positionPct.toFloat()
+        size = prefs.size
+        opacityPct = prefs.opacityPct
+        if (prefs.handleHidden) {
+            removeHandle()
+            return true
+        }
+        val handleView = view ?: return showHandle()
+        // Mid-drag the finger owns the window; the drag's own snap saves the final placement.
+        if (dragging) return true
+        handleView.setIdleOpacity(opacityPct / 100f)
+        applyPlacement()
+        return true
+    }
+
     /** Adds the handle window. Idempotent: an existing handle is removed first. Returns true if added. */
     fun showHandle(): Boolean {
         removeHandle()
-        val handleView = EdgeHandleView(context, volume, side, repositionListener)
+        val handleView = EdgeHandleView(context, volume, side, opacityPct / 100f, repositionListener)
         val layoutParams = WindowManager.LayoutParams(
             0,
             0,
@@ -81,7 +105,7 @@ internal class OverlayController(
         }
         view = handleView
         params = layoutParams
-        Log.d(TAG, "handle added: side=$side pct=${positionPercent.roundToInt()}")
+        Log.d(TAG, "handle added: side=$side pct=${positionPercent.roundToInt()} size=$size opacity=$opacityPct")
         return true
     }
 
@@ -177,7 +201,7 @@ internal class OverlayController(
     private fun applyGeometry(layoutParams: WindowManager.LayoutParams) {
         val density = context.resources.displayMetrics.density
         val widthPx = (HandleDefaults.TOUCH_WIDTH_DP * density).roundToInt()
-        val heightPx = (HandleDefaults.HEIGHT_DP * density).roundToInt()
+        val heightPx = (size.heightDp * density).roundToInt()
         layoutParams.width = widthPx
         layoutParams.height = heightPx
         layoutParams.gravity = Gravity.TOP or (if (side == HandleSide.RIGHT) Gravity.RIGHT else Gravity.LEFT)

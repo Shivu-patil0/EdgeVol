@@ -1,6 +1,7 @@
 package app.edgevol.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -31,20 +33,25 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.edgevol.R
+import app.edgevol.data.Prefs
 import app.edgevol.system.SetupStatus
 
 @Composable
 fun SetupScreen(
     status: SetupStatus,
+    prefs: Prefs,
     onEnableService: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onTestPanel: () -> Unit,
     onOpenAutostart: () -> Unit,
+    onAddTile: () -> Unit,
+    onPrefsChange: ((Prefs) -> Prefs) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -71,11 +78,9 @@ fun SetupScreen(
 
             when (state) {
                 SetupState.Running -> {
-                    Text(
-                        text = stringResource(R.string.setup_ready_message),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                    ReadyText(handleHidden = prefs.handleHidden)
                     if (status.showAutostartHelp) AutostartCard(onOpenAutostart = onOpenAutostart)
+                    HandleSettingsCard(prefs = prefs, onPrefsChange = onPrefsChange)
                 }
                 SetupState.EnabledNotRunning -> NotRunningContent(
                     showAutostartHelp = status.showAutostartHelp,
@@ -90,10 +95,32 @@ fun SetupScreen(
                 }
             }
 
+            TileCard(canRequestAddTile = status.canRequestAddTile, onAddTile = onAddTile)
             TryItCard(onTestPanel = onTestPanel)
             Spacer(Modifier.height(8.dp))
         }
     }
+}
+
+/**
+ * Both messages are laid out on top of each other, so the space stays the same when the opacity
+ * slider crosses Off and the card below doesn't jump under the user's finger.
+ */
+@Composable
+private fun ReadyText(handleHidden: Boolean) {
+    Box {
+        ReadyMessage(R.string.setup_ready_message, visible = !handleHidden)
+        ReadyMessage(R.string.setup_ready_hidden_message, visible = handleHidden)
+    }
+}
+
+@Composable
+private fun ReadyMessage(textRes: Int, visible: Boolean) {
+    Text(
+        text = stringResource(textRes),
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = if (visible) Modifier else Modifier.alpha(0f).clearAndSetSemantics {},
+    )
 }
 
 @Composable

@@ -27,7 +27,7 @@ Recovery when it is still not running: Settings → Accessibility → Downloaded
 
 | Permission / capability | Why | When requested | If denied |
 |---|---|---|---|
-| **Accessibility service** (`BIND_ACCESSIBILITY_SERVICE`, granted by the user enabling it) | Draw the edge handle over every app; collapse the shade when the tile is used (M3) | Setup step 4 | No handle. The QS tile (M3) opens setup instead |
+| **Accessibility service** (`BIND_ACCESSIBILITY_SERVICE`, granted by the user enabling it) | Draw the edge handle over every app | Setup step 4 | No handle. The Quick Settings tile still shows the volume panel (it needs no permission) |
 | `INTERNET` | — | **Never requested** | — |
 | `SYSTEM_ALERT_WINDOW` | — | **Not needed** (accessibility overlay) | — |
 | `ACCESS_NOTIFICATION_POLICY` (DND) | — | **Not needed**: EdgeVol never changes the volume itself, it only shows the system panel, whose sliders SystemUI is allowed to change | — |
@@ -41,7 +41,7 @@ Showing the system volume panel (`AudioManager.adjustSuggestedStreamVolume` with
 > **EdgeVol uses Android's Accessibility service only to keep its small volume handle on the screen edge, above other apps.**
 > It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show its volume panel.
 
-The code-level facts (`canRetrieveWindowContent = false`, no `INTERNET` permission) are enforced by tests, not stated in user-facing text. The Quick Settings tile sentence ("closing the notification shade when you use the Quick Settings tile") is added in M3 together with the tile.
+The code-level facts (`canRetrieveWindowContent = false`, no `INTERNET` permission) are enforced by tests, not stated in user-facing text. The accessibility service performs **no** system action: the Quick Settings tile closes the shade with `startActivityAndCollapse`, not through the service, so no shade sentence is needed.
 
 The shipped `@string/a11y_service_description` (shown by Android on the accessibility settings page) and the in-app disclosure (`setup_disclosure_body`) use this exact text (M2.1; it said "show or change the volume" until the drag-volume gesture was removed):
 

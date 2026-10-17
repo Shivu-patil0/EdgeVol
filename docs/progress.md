@@ -174,3 +174,25 @@ Done directly (no agent team, at the user's request for speed), from the user's 
 - Verified (14:3x): with Autostart alone, "clear all" kills EdgeVol and it comes back only after the back-off (51 s, then 204 s when cleared again within a minute) or when the app is opened — the user found that too slow. After **locking the EdgeVol card in Recents** (`settings get system locked_apps` → `app.edgevol`), "clear all" killed 27 other processes and **not** EdgeVol; the handle stayed. So the Xiaomi card asks for two one-time steps: Autostart + lock. `excludeFromRecents` was reverted because locking needs the card.
 - Ruling: no foreground service / persistent notification as an alternative to locking — it breaks the "no foreground service" invariant, adds a permanent notification, and whether MIUI's "clear all" spares unlocked foreground-service apps is **unverified** here — revisit only if locking proves unacceptable.
 - Note: an independent code review of the rotation and Autostart changes found no issues.
+
+## M3 · Triggers and settings ✅
+
+Built directly (no agent team) at the user's request for speed, with one independent code review at the end.
+
+| Change | Result |
+|---|---|
+| `Prefs.size` (S/M/L = 56/72/120 dp) and `Prefs.opacityPct` (0–80, default 35; 0 = tile only), DataStore keys `size` / `opacity_pct`, clamped and defaulted on read | Unit-tested; persisted on the phone |
+| `OverlayController.apply(prefs)` + the service collecting `prefs` live | Verified by driving the setup screen over adb: **Left** → frame x 0–66; **Large** → height 330 px (120 dp); **Height 50%** → centre 1200 px; opacity changed step by step; **Off** → handle window removed, service still bound; restore → handle re-added at the original frame |
+| Quick Settings tile `VolumeTileService` + invisible `PanelTrampolineActivity` | User added the tile by hand (Android 11 has no prompt) and tapped it: activity resumed and finished within 20 ms, MIUI's panel was requested 350 ms later and shown |
+| Setup screen: *Handle* card, *Quick Settings tile* card, tile-only ready text; `SetupStatus.canRequestAddTile`, `SystemSettings.requestAddTile` | Rendered on the phone; previews for handle settings and tile-only |
+
+Checks: `testDebugUnitTest lintDebug assembleDebug :app:processReleaseManifest assembleRelease` PASS, **160 tests, 0 failures**; lint 0 errors / 9 warnings (unchanged set; `StartActivityAndCollapseDeprecated` suppressed on the API < 34 branch only). Release manifest: still no permissions besides androidx's `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`; new exported component `VolumeTileService` is guarded by `BIND_QUICK_SETTINGS_TILE`, the trampoline is not exported.
+
+- Ruling: the tile shows the panel through an invisible activity started with `startActivityAndCollapse`, not through the accessibility service — one path for API 26–36, no dependency on the service, and closes the shade on Android 11 where `GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` doesn't exist — costs one extra (non-exported) activity and a fixed 350 ms delay.
+- Ruling: opacity 0 removes the handle window (tile-only mode) instead of drawing an invisible but touchable strip — no hidden touch trap — users must use the tile or re-raise opacity.
+- Ruling: sliders save once per whole-percent change (≤ 80 small DataStore writes per full sweep) so the real handle follows live — a full-speed sweep causes a burst of writes.
+- Ruling: tile label "Volume" with the three-bar glyph from `logo-mono.svg`.
+- Note: `uiautomator dump` suspends accessibility services while it runs (the handle was removed and re-added at 14:47:41); use screenshots of EdgeVol instead.
+- Review (independent code review, then fixed): slider saves could end on a different value than the one released on (stale store echoes overwrote the screen's state while saves were queued, and the slider's "already saved" check read a value only refreshed on recomposition), worst case leaving opacity at 1 % when the user chose Off; a save started just before leaving the screen could be dropped. Fix: `MainActivity` ignores store emissions while its own saves are pending and resyncs from `PrefsRepository.update`'s returned value; saves run `NonCancellable`; the shared `PercentSlider` tracks the last value it sent in state and always sends the final value on release. Reproduced first on the phone (a fast 40 → 0 → ~2 → 0 drag stored 1 % with the handle still up), then verified fixed (same drag → stored 0, service applied 0, handle removed, label "Off").
+- Fix: the ready text above the Handle card changed length when opacity crossed Off, so the card jumped under the finger mid-drag; both messages now share the same space (verified: slider stays at the same height).
+- Unverified: the Android 13+ *Add tile* prompt and the API 34+ `PendingIntent` tile path (no such device), tile on the lock screen, TalkBack on the new controls.

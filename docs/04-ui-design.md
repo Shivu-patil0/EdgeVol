@@ -67,8 +67,9 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 
 | Section | Content |
 |---|---|
-| Status | **Three states.** *Off*: disclosure, *Enable*, restricted-settings help (Android 13+). *Enabled but not running*: "On, but not running" with the explanation that this happens when the app is cleared from Recents, a button to Accessibility settings, "switch it off and on once more" and a Xiaomi/MIUI hint (lock in Recents, allow Autostart, Battery "No restrictions"). *Running*: "On" and where to find the handle and how to use it. The handle is never claimed unless the service is really running. Later (M3): *Add Quick Settings tile* |
-| Handle (M3) | Side · Position (10–90%) · Size (S/M/L) · Opacity (0–80%) with a live preview on the screen edge |
+| Status | **Three states.** *Off*: disclosure, *Enable*, restricted-settings help (Android 13+). *Enabled but not running*: "On, but not running" with the explanation, the *Keep EdgeVol running* card on Xiaomi/Redmi/POCO (Autostart + lock in Recents), a button to Accessibility settings and "switch it off and on once more". *Running*: "On" and where to find the handle and how to use it (or the tile-only text when opacity is Off), plus the Xiaomi card. The handle is never claimed unless the service is really running |
+| Handle (M3, *Running* only) | Side (Left/Right) · Height slider (10–90%) · Size (Small/Medium/Large = 56/72/120 dp) · Opacity slider (Off–80%; **Off = Quick Settings tile only**, the handle window is removed). Every change moves the real handle live |
+| Quick Settings tile (M3, every state) | What the tile does, and *Add tile* (Android 13+ system prompt) or manual steps (pull down Quick Settings → edit → drag the "Volume" tile) |
 | Try it | *Show volume panel* button (calls `SystemVolume.showPanel()`) in every state |
 
 ## Logo

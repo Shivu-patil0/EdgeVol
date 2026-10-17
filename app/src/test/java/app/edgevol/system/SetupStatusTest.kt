@@ -87,4 +87,13 @@ class SetupStatusTest {
         assertFalse(SetupStatus(true).showAutostartHelp)
         assertFalse(SetupStatus(true, serviceRunning = true).showAutostartHelp)
     }
+
+    @Test
+    fun `the Add tile prompt is offered from Android 13`() {
+        assertFalse(canRequestAddTile(30))
+        assertFalse(canRequestAddTile(32))
+        assertTrue(canRequestAddTile(33))
+        assertTrue(canRequestAddTile(36))
+        assertFalse(SetupStatus(true).canRequestAddTile)
+    }
 }

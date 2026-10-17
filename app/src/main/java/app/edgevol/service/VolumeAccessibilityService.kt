@@ -16,6 +16,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +40,7 @@ class VolumeAccessibilityService : AccessibilityService() {
             val prefs = loadPrefs(repository)
             // A cancelled load (service unbound meanwhile) must never add a handle.
             ensureActive()
-            Log.d(TAG, "prefs loaded: side=${prefs.side} pct=${prefs.positionPct}")
+            Log.d(TAG, "prefs loaded: side=${prefs.side} pct=${prefs.positionPct} size=${prefs.size} opacity=${prefs.opacityPct}")
             val controller = OverlayController(
                 context = this@VolumeAccessibilityService,
                 volume = SystemVolume(this@VolumeAccessibilityService),
@@ -60,7 +61,18 @@ class VolumeAccessibilityService : AccessibilityService() {
                 }
             }
             overlay = controller
-            if (controller.showHandle()) isRunning = true
+            isRunning = controller.apply(prefs)
+            // Live updates from the setup screen. A snap's own save comes back here too; apply() is idempotent.
+            try {
+                repository.prefs.distinctUntilChanged().collect { latest ->
+                    Log.d(TAG, "prefs applied: side=${latest.side} pct=${latest.positionPct} size=${latest.size} opacity=${latest.opacityPct}")
+                    isRunning = controller.apply(latest)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "prefs watch failed: ${e.javaClass.simpleName}")
+            }
         }
     }
 
@@ -108,8 +120,8 @@ class VolumeAccessibilityService : AccessibilityService() {
         private const val PREFS_LOAD_TIMEOUT_MS = 1000L
 
         /**
-         * Process-wide: true once the handle window has been added after [onServiceConnected], until
-         * [onUnbind]/[onDestroy].
+         * Process-wide: true once the service is connected and its handle is shown (or deliberately
+         * hidden because the user chose tile-only), until [onUnbind]/[onDestroy].
          */
         @Volatile
         var isRunning: Boolean = false

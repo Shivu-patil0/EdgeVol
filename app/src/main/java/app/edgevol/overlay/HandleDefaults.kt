@@ -5,8 +5,6 @@ internal object HandleDefaults {
     const val POSITION_MIN_PERCENT: Float = 10f
     const val POSITION_MAX_PERCENT: Float = 90f
 
-    const val HEIGHT_DP: Float = 72f
-
     /** Width of the touch window. Must stay >= [PILL_WIDTH_ACTIVE_DP]. */
     const val TOUCH_WIDTH_DP: Float = 24f
 
@@ -18,9 +16,6 @@ internal object HandleDefaults {
 
     const val WIDEN_DURATION_MS: Long = 120L
     const val NARROW_DURATION_MS: Long = 160L
-
-    /** Idle opacity of the visible pill, 0..1. */
-    const val OPACITY: Float = 0.35f
 
     /** Moving further than this (per axis) before the hold fires turns the touch into a non-tap. */
     const val TAP_MAX_TRAVEL_DP: Float = 48f

@@ -14,9 +14,13 @@ data class SetupStatus(
      * the phone kills the app (e.g. "clear all" in Recents) if Autostart is allowed for EdgeVol.
      */
     val showAutostartHelp: Boolean = false,
+    /** True on Android 13+, where the app can show the system "Add tile" prompt. */
+    val canRequestAddTile: Boolean = false,
 )
 
 internal fun shouldShowRestrictedSettingsHelp(sdkInt: Int): Boolean = sdkInt >= 33
+
+internal fun canRequestAddTile(sdkInt: Int): Boolean = sdkInt >= 33
 
 internal fun isXiaomiFamily(manufacturer: String, brand: String): Boolean =
     listOf(manufacturer, brand).any { value ->

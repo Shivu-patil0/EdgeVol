@@ -19,6 +19,27 @@
             </intent-filter>
         </activity>
 
+        <!-- Invisible: lets the Quick Settings tile close the shade before the volume panel shows. -->
+        <activity
+            android:name=".system.PanelTrampolineActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <!-- BIND_QUICK_SETTINGS_TILE is signature-level: only SystemUI can bind. -->
+        <service
+            android:name=".service.VolumeTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- BIND_ACCESSIBILITY_SERVICE is signature-level: only the system can bind. -->
         <service
             android:name=".service.VolumeAccessibilityService"

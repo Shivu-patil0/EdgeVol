@@ -10,17 +10,19 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.edgevol.data.Prefs.Companion.OPACITY_MAX_PCT
+import app.edgevol.data.Prefs.Companion.OPACITY_MIN_PCT
+import app.edgevol.data.Prefs.Companion.POSITION_MAX_PCT
+import app.edgevol.data.Prefs.Companion.POSITION_MIN_PCT
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
-// Own copies of the bounds (overlay's HandleDefaults is internal to that package and Float-typed).
-private const val POSITION_MIN_PCT = 10
-private const val POSITION_MAX_PCT = 90
-
 private val SIDE_KEY = stringPreferencesKey("side")
 private val POSITION_KEY = intPreferencesKey("position_pct")
+private val SIZE_KEY = stringPreferencesKey("size")
+private val OPACITY_KEY = intPreferencesKey("opacity_pct")
 
 /** One DataStore instance per process for the "handle" file. */
 private val Context.handleStore: DataStore<Preferences> by preferencesDataStore(
@@ -41,11 +43,11 @@ class PrefsRepository internal constructor(private val store: DataStore<Preferen
         }
         .map { it.toPrefs() }
 
-    suspend fun update(transform: (Prefs) -> Prefs) {
+    /** Applies [transform] to the stored prefs and returns what was stored. */
+    suspend fun update(transform: (Prefs) -> Prefs): Prefs =
         store.edit { mutable ->
             mutable.write(transform(mutable.toPrefs()))
-        }
-    }
+        }.toPrefs()
 }
 
 internal fun Preferences.toPrefs(): Prefs {
@@ -56,10 +58,21 @@ internal fun Preferences.toPrefs(): Prefs {
         ?.let { name -> HandleSide.entries.firstOrNull { it.name == name } }
         ?: defaults.side
     val position = raw[POSITION_KEY] as? Int ?: defaults.positionPct
-    return Prefs(side = side, positionPct = position.coerceIn(POSITION_MIN_PCT, POSITION_MAX_PCT))
+    val size = (raw[SIZE_KEY] as? String)
+        ?.let { name -> HandleSize.entries.firstOrNull { it.name == name } }
+        ?: defaults.size
+    val opacity = raw[OPACITY_KEY] as? Int ?: defaults.opacityPct
+    return Prefs(
+        side = side,
+        positionPct = position.coerceIn(POSITION_MIN_PCT, POSITION_MAX_PCT),
+        size = size,
+        opacityPct = opacity.coerceIn(OPACITY_MIN_PCT, OPACITY_MAX_PCT),
+    )
 }
 
 internal fun MutablePreferences.write(prefs: Prefs) {
     this[SIDE_KEY] = prefs.side.name
     this[POSITION_KEY] = prefs.positionPct.coerceIn(POSITION_MIN_PCT, POSITION_MAX_PCT)
+    this[SIZE_KEY] = prefs.size.name
+    this[OPACITY_KEY] = prefs.opacityPct.coerceIn(OPACITY_MIN_PCT, OPACITY_MAX_PCT)
 }
