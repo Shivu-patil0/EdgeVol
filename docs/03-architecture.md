@@ -212,15 +212,19 @@ class VolumeAccessibilityService : AccessibilityService() {
 
 This is the **only** API surface between `platform-dev` and `ui-dev` code (see the [agent team](07-agent-team.md)). Once it exists, both sides can be built in parallel. Changes need the manager's approval and an update here. The contract wins over the sketches above wherever they differ.
 
+**Delivered per milestone.** Each signature is tagged with the milestone that introduces it. M1 ships only the parts tagged `M1`; the rest arrive with M2 and M3. In particular, M1's `SetupScreen` is `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`; the `prefs`, `onAddTile`, `onTestPanel` and `onPrefsChange` parameters are added in M2 (`onTestPanel`) and M3 (the rest). *Amendment approved by the user on 2026-10-17.*
+
 **Platform → UI** (owned by `platform-dev`):
 
 ```kotlin
+// M2
 package app.edgevol.audio
 class SystemVolume(context: Context) {
     fun showPanel()
     fun step(up: Boolean): Boolean               // false = refused by Android → caller calls showPanel()
 }
 
+// M3
 package app.edgevol.data
 enum class HandleSide { LEFT, RIGHT }
 enum class HandleSize { S, M, L }
@@ -236,12 +240,12 @@ class PrefsRepository(context: Context) {
 }
 
 package app.edgevol.system
-data class SetupStatus(val serviceEnabled: Boolean)
+data class SetupStatus(val serviceEnabled: Boolean)              // M1
 object SystemSettings {
-    fun status(context: Context): SetupStatus
-    fun accessibilitySettingsIntent(): Intent
-    fun appDetailsIntent(context: Context): Intent
-    fun requestAddTile(context: Context)         // API 33+, no-op below
+    fun status(context: Context): SetupStatus                    // M1
+    fun accessibilitySettingsIntent(): Intent                    // M1
+    fun appDetailsIntent(context: Context): Intent               // M1
+    fun requestAddTile(context: Context)         // M3: API 33+, no-op below
 }
 ```
 
@@ -249,20 +253,22 @@ object SystemSettings {
 
 ```kotlin
 package app.edgevol.ui.theme
-@Composable fun EdgeVolTheme(content: @Composable () -> Unit)
+@Composable fun EdgeVolTheme(content: @Composable () -> Unit)    // M1
 
 package app.edgevol.ui.setup
 @Composable fun SetupScreen(
-    status: SetupStatus,
-    prefs: Prefs,
-    onEnableService: () -> Unit,
-    onOpenAppInfo: () -> Unit,
-    onAddTile: () -> Unit,
-    onTestPanel: () -> Unit,                     // calls SystemVolume.showPanel()
-    onPrefsChange: ((Prefs) -> Prefs) -> Unit,
-    modifier: Modifier = Modifier,
+    status: SetupStatus,                         // M1
+    prefs: Prefs,                                // M3
+    onEnableService: () -> Unit,                 // M1
+    onOpenAppInfo: () -> Unit,                   // M1
+    onAddTile: () -> Unit,                       // M3
+    onTestPanel: () -> Unit,                     // M2: calls SystemVolume.showPanel()
+    onPrefsChange: ((Prefs) -> Prefs) -> Unit,   // M3
+    modifier: Modifier = Modifier,               // M1
 )
 ```
+
+M1 form: `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`.
 
 ## Planned repository layout
 
@@ -293,7 +299,7 @@ phone_audio_control/
         │   │   ├── service/VolumeTileService.kt
         │   │   ├── system/SystemSettings.kt
         │   │   └── ui/{setup,theme}/…
-        │   └── res/{xml,drawable,mipmap-anydpi-v26,values}/…   # values/strings_system.xml = platform strings
+        │   └── res/{xml,drawable,mipmap-anydpi,values}/…   # values/strings_system.xml = platform strings
         ├── test/                   # JVM + Robolectric
         └── androidTest/            # Compose UI + on-device
 ```
