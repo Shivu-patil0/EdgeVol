@@ -9,7 +9,6 @@ import app.edgevol.audio.SystemVolume
 import app.edgevol.data.Prefs
 import app.edgevol.data.PrefsRepository
 import app.edgevol.overlay.OverlayController
-import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +52,9 @@ class VolumeAccessibilityService : AccessibilityService() {
                             repository.update { it.copy(side = placement.side, positionPct = placement.positionPct) }
                         }
                         Log.d(TAG, "prefs saved: side=${placement.side} pct=${placement.positionPct}")
-                    } catch (e: IOException) {
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
                         Log.w(TAG, "prefs save failed: ${e.javaClass.simpleName}")
                     }
                 }

@@ -28,11 +28,13 @@ internal object HandleDefaults {
     const val LONG_PRESS_MS: Long = 500L
 
     /**
-     * How long after our own panel show a tap is treated as a "close" tap. MIUI auto-hides the panel
-     * after ~2.0 s, stock Android after ~3 s; MIUI/AOSP dismiss the panel on any touch outside it,
-     * including our ACTION_DOWN, so a tap within this window is a "close" tap. 1800 ms is below the
-     * shortest known timeout, so we rarely swallow a tap when the panel is already gone; a wrong
-     * guess costs one extra tap (swallowed) or the old flicker (reopen), never a failure.
+     * Debounce window after our own panel show. A tap that starts within this window is treated as
+     * a "close" tap and does nothing, because the panel is assumed to still be up; re-requesting it
+     * would only restart its timeout and make MIUI flicker. The panel hides itself ~2.0 s after it
+     * was shown on MIUI (stock Android ~3 s). Whether a touch over our handle closes the panel is
+     * OEM-dependent; it is verified only as "no" on MIUI 12.5, where the panel window sits below
+     * our accessibility overlay so the touch is not an outside touch. 1800 ms is just below MIUI's
+     * 2.0 s timeout; a wrong guess costs one extra tap.
      */
     const val PANEL_ASSUMED_VISIBLE_MS: Long = 1800L
 
