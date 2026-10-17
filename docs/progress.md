@@ -196,3 +196,20 @@ Checks: `testDebugUnitTest lintDebug assembleDebug :app:processReleaseManifest a
 - Review (independent code review, then fixed): slider saves could end on a different value than the one released on (stale store echoes overwrote the screen's state while saves were queued, and the slider's "already saved" check read a value only refreshed on recomposition), worst case leaving opacity at 1 % when the user chose Off; a save started just before leaving the screen could be dropped. Fix: `MainActivity` ignores store emissions while its own saves are pending and resyncs from `PrefsRepository.update`'s returned value; saves run `NonCancellable`; the shared `PercentSlider` tracks the last value it sent in state and always sends the final value on release. Reproduced first on the phone (a fast 40 → 0 → ~2 → 0 drag stored 1 % with the handle still up), then verified fixed (same drag → stored 0, service applied 0, handle removed, label "Off").
 - Fix: the ready text above the Handle card changed length when opacity crossed Off, so the card jumped under the finger mid-drag; both messages now share the same space (verified: slider stays at the same height).
 - Unverified: the Android 13+ *Add tile* prompt and the API 34+ `PendingIntent` tile path (no such device), tile on the lock screen, TalkBack on the new controls.
+
+### M3.1 · Tile becomes the Show handle switch (user decision, option A)
+
+The user asked for the tile to show/hide the handle instead of opening the volume panel, and for opening the app to turn it on.
+
+| Change | Result |
+|---|---|
+| `Prefs.handleEnabled` (key `handle_enabled`, default true); opacity range 10–80; stored opacity 0 from M3 reads as handle off | Unit-tested (incl. the migration) |
+| **Show handle** switch row at the top of the Handle card (whole row toggles, `Role.Switch`) | Verified over adb: off → handle window removed, service still bound; on → back at the same frame |
+| `VolumeTileService` = switch: renders On/Off from the stored flag while listening, tap flips it (saved `NonCancellable`), `TOGGLEABLE_TILE` meta-data, label "Volume handle", subtitle On/Off; long-press opens EdgeVol (`QS_TILE_PREFERENCES`); turning on without the accessibility service opens setup | User test passed: tile off → handle removed in ≈ 60 ms, on → added in ≈ 70 ms; long-press → EdgeVol opened and the handle came back; tile showed On afterwards |
+| A fresh launch of EdgeVol sets `handleEnabled = true` (not on returning to it) | Verified (15:18:51 in the log) |
+| `PanelTrampolineActivity` removed (the tile no longer shows the volume panel) | Manifest has one activity again |
+
+Checks: 163 tests, 0 failures; lint 0 errors / 9 warnings. Supersedes the two M3 rulings above about the trampoline and "opacity 0 = tile only".
+
+- Ruling: hiding is one switch (app + tile) instead of a second meaning of opacity — fewer ways to get the same state — opacity can no longer be set below 10 %.
+- Ruling: the tile no longer shows the volume panel — the user preferred show/hide — with the handle hidden, changing volume takes two steps (tile on, tap the handle) or the app's *Show volume panel* button.

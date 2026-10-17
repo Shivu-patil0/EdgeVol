@@ -132,8 +132,8 @@ Run on your phone with the service on. Tick or write a few words per row; anythi
 | 14 | Xiaomi only: tap **Open Autostart settings** in the app, switch EdgeVol on, come back | The Autostart list opens; Back returns to EdgeVol |
 | 15 | Xiaomi only: open Recents, long-press the EdgeVol card, tap the lock | The card shows a lock |
 | 16 | Tap "clear all" in Recents | The handle stays (locked). Unlocked but with Autostart: it comes back within about a minute, or at once when you open EdgeVol |
-| 17 | Setup screen → Handle: tap Left/Right, Small/Medium/Large, move Height and Opacity | The real handle moves, resizes and fades live; opacity **Off** removes it and the text switches to "use the Quick Settings tile" |
-| 18 | Add the "Volume" tile (Quick Settings → edit → drag it in), then tap it | The shade closes and the volume panel shows, with or without the handle |
+| 17 | Setup screen → Handle: tap Left/Right, Small/Medium/Large, move Height and Opacity, flip **Show handle** | The real handle moves, resizes and fades live; Show handle off removes it and the text says how to bring it back |
+| 18 | Add the "Volume handle" tile (Quick Settings → edit → drag it in); tap it twice; long-press it | Off ↔ On hides and shows the handle; long-press opens EdgeVol, which turns the handle on |
 | 19 | Optional, TalkBack: focus the handle and double-tap | The panel shows |
 | 20 | Optional: setup screen at 200% font size | Nothing clipped |
 

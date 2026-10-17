@@ -40,7 +40,7 @@ class VolumeAccessibilityService : AccessibilityService() {
             val prefs = loadPrefs(repository)
             // A cancelled load (service unbound meanwhile) must never add a handle.
             ensureActive()
-            Log.d(TAG, "prefs loaded: side=${prefs.side} pct=${prefs.positionPct} size=${prefs.size} opacity=${prefs.opacityPct}")
+            Log.d(TAG, "prefs loaded: side=${prefs.side} pct=${prefs.positionPct} size=${prefs.size} opacity=${prefs.opacityPct} enabled=${prefs.handleEnabled}")
             val controller = OverlayController(
                 context = this@VolumeAccessibilityService,
                 volume = SystemVolume(this@VolumeAccessibilityService),
@@ -65,7 +65,7 @@ class VolumeAccessibilityService : AccessibilityService() {
             // Live updates from the setup screen. A snap's own save comes back here too; apply() is idempotent.
             try {
                 repository.prefs.distinctUntilChanged().collect { latest ->
-                    Log.d(TAG, "prefs applied: side=${latest.side} pct=${latest.positionPct} size=${latest.size} opacity=${latest.opacityPct}")
+                    Log.d(TAG, "prefs applied: side=${latest.side} pct=${latest.positionPct} size=${latest.size} opacity=${latest.opacityPct} enabled=${latest.handleEnabled}")
                     isRunning = controller.apply(latest)
                 }
             } catch (e: CancellationException) {

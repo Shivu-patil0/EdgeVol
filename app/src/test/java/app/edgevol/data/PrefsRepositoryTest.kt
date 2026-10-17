@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -246,10 +247,10 @@ class PrefsRepositoryTest {
     }
 
     @Test
-    fun `opacity 0 hides the handle and anything above shows it`() {
-        assertEquals(true, Prefs(opacityPct = 0).handleHidden)
-        assertEquals(false, Prefs(opacityPct = 1).handleHidden)
+    fun `the Show handle switch decides whether the handle is hidden`() {
         assertEquals(false, Prefs().handleHidden)
+        assertEquals(true, Prefs(handleEnabled = false).handleHidden)
+        assertEquals(true, Prefs().handleEnabled)
     }
 
     @Test
@@ -260,9 +261,23 @@ class PrefsRepositoryTest {
     }
 
     @Test
-    fun `toPrefs clamps opacity to 0 to 80`() {
+    fun `toPrefs clamps opacity to 10 to 80`() {
         assertEquals(80, preferencesOf(opacityKey to 120).toPrefs().opacityPct)
-        assertEquals(0, preferencesOf(opacityKey to -5).toPrefs().opacityPct)
+        assertEquals(10, preferencesOf(opacityKey to 3).toPrefs().opacityPct)
+    }
+
+    @Test
+    fun `opacity 0 from older builds reads as hidden with the default opacity`() {
+        val p = preferencesOf(opacityKey to 0).toPrefs()
+        assertEquals(false, p.handleEnabled)
+        assertEquals(35, p.opacityPct)
+    }
+
+    @Test
+    fun `a stored Show handle value wins over the old opacity 0 rule`() {
+        val p = preferencesOf(opacityKey to 0, enabledKey to true).toPrefs()
+        assertEquals(true, p.handleEnabled)
+        assertEquals(false, preferencesOf(opacityKey to 50, enabledKey to false).toPrefs().handleEnabled)
     }
 
     @Test
@@ -270,15 +285,17 @@ class PrefsRepositoryTest {
         val p = preferencesOf(sizeKey to "XL", stringPreferencesKey("opacity_pct") to "high").toPrefs()
         assertEquals(HandleSize.M, p.size)
         assertEquals(35, p.opacityPct)
+        assertEquals(true, p.handleEnabled)
     }
 
     @Test
-    fun `size and opacity survive a write and read round trip`() {
+    fun `size, opacity and the Show handle switch survive a write and read round trip`() {
         val repo = PrefsRepository(store())
-        runBlocking { repo.update { it.copy(size = HandleSize.S, opacityPct = 0) } }
+        runBlocking { repo.update { it.copy(size = HandleSize.S, opacityPct = 15, handleEnabled = false) } }
         val p = read(repo)
         assertEquals(HandleSize.S, p.size)
-        assertEquals(0, p.opacityPct)
+        assertEquals(15, p.opacityPct)
+        assertEquals(false, p.handleEnabled)
     }
 
     @Test
@@ -305,11 +322,13 @@ class PrefsRepositoryTest {
     fun `back-to-back updates are applied in order, so the last value wins`() {
         val repo = PrefsRepository(store())
         val stored = runBlocking {
-            repo.update { it.copy(opacityPct = 0) }
-            repo.update { it.copy(opacityPct = 1) }
-            repo.update { it.copy(opacityPct = 0) }
+            repo.update { it.copy(handleEnabled = false) }
+            repo.update { it.copy(handleEnabled = true) }
+            repo.update { it.copy(handleEnabled = false) }
         }
-        assertEquals(0, stored.opacityPct)
+        assertEquals(false, stored.handleEnabled)
         assertEquals(true, read(repo).handleHidden)
     }
+
+    private val enabledKey = booleanPreferencesKey("handle_enabled")
 }

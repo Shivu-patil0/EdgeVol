@@ -2,9 +2,11 @@ package app.edgevol.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -13,14 +15,17 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -46,6 +51,26 @@ internal fun HandleSettingsCard(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.semantics { heading() },
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .toggleable(
+                        value = prefs.handleEnabled,
+                        role = Role.Switch,
+                        onValueChange = { on -> onPrefsChange { it.copy(handleEnabled = on) } },
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.setup_handle_show),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                // The whole row is the switch, so the Switch itself takes no clicks of its own.
+                Switch(checked = prefs.handleEnabled, onCheckedChange = null)
+            }
 
             Text(stringResource(R.string.setup_handle_side), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
@@ -79,13 +104,7 @@ internal fun HandleSettingsCard(
                 stored = prefs.opacityPct,
                 range = Prefs.OPACITY_MIN_PCT..Prefs.OPACITY_MAX_PCT,
                 onChange = { pct -> onPrefsChange { it.copy(opacityPct = pct) } },
-                label = { pct ->
-                    if (pct <= 0) {
-                        stringResource(R.string.setup_handle_opacity_off)
-                    } else {
-                        stringResource(R.string.setup_handle_opacity, pct)
-                    }
-                },
+                label = { pct -> stringResource(R.string.setup_handle_opacity, pct) },
             )
         }
     }

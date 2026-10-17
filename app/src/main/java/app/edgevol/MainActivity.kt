@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         status = SystemSettings.status(this)
         val volume = SystemVolume(applicationContext)
+        // Opening EdgeVol turns the handle on (only on a fresh launch, not when returning to it).
+        if (savedInstanceState == null) changePrefs { it.copy(handleEnabled = true) }
         lifecycleScope.launch {
             // While our own saves are queued, the store's emissions lag behind the screen; ignore them.
             repository.prefs.collect { stored -> if (pendingSaves == 0) prefs = stored }

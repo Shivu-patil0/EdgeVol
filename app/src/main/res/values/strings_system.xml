@@ -2,5 +2,7 @@
 <resources>
     <string name="a11y_service_description">EdgeVol uses Android\'s Accessibility service only to keep its small volume handle on the screen edge, above other apps. It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show its volume panel.</string>
     <string name="handle_content_description">EdgeVol volume handle</string>
-    <string name="tile_label">Volume</string>
+    <string name="tile_label">Volume handle</string>
+    <string name="tile_state_on">On</string>
+    <string name="tile_state_off">Off</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -23,6 +24,7 @@ private val SIDE_KEY = stringPreferencesKey("side")
 private val POSITION_KEY = intPreferencesKey("position_pct")
 private val SIZE_KEY = stringPreferencesKey("size")
 private val OPACITY_KEY = intPreferencesKey("opacity_pct")
+private val ENABLED_KEY = booleanPreferencesKey("handle_enabled")
 
 /** One DataStore instance per process for the "handle" file. */
 private val Context.handleStore: DataStore<Preferences> by preferencesDataStore(
@@ -62,11 +64,14 @@ internal fun Preferences.toPrefs(): Prefs {
         ?.let { name -> HandleSize.entries.firstOrNull { it.name == name } }
         ?: defaults.size
     val opacity = raw[OPACITY_KEY] as? Int ?: defaults.opacityPct
+    // Builds before the "Show handle" switch hid the handle with opacity 0; read that as switched off.
+    val enabled = raw[ENABLED_KEY] as? Boolean ?: (opacity > 0)
     return Prefs(
         side = side,
         positionPct = position.coerceIn(POSITION_MIN_PCT, POSITION_MAX_PCT),
         size = size,
-        opacityPct = opacity.coerceIn(OPACITY_MIN_PCT, OPACITY_MAX_PCT),
+        opacityPct = if (opacity <= 0) defaults.opacityPct else opacity.coerceIn(OPACITY_MIN_PCT, OPACITY_MAX_PCT),
+        handleEnabled = enabled,
     )
 }
 
@@ -75,4 +80,5 @@ internal fun MutablePreferences.write(prefs: Prefs) {
     this[POSITION_KEY] = prefs.positionPct.coerceIn(POSITION_MIN_PCT, POSITION_MAX_PCT)
     this[SIZE_KEY] = prefs.size.name
     this[OPACITY_KEY] = prefs.opacityPct.coerceIn(OPACITY_MIN_PCT, OPACITY_MAX_PCT)
+    this[ENABLED_KEY] = prefs.handleEnabled
 }

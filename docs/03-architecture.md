@@ -9,12 +9,12 @@
 | Component | Responsibility | Key Android APIs |
 |---|---|---|
 | `VolumeAccessibilityService` | Process anchor. Bound by the system while enabled and re-bound after a normal process death or reboot (on MIUI only if Autostart is allowed, see below). Loads `Prefs` in a lifecycle-scoped coroutine, owns `OverlayController` and `SystemVolume`, and keeps watching `Prefs` so setup-screen changes apply live (M3). Exposes the process-wide `isRunning` flag. Ignores all accessibility events. | `AccessibilityService`, coroutines |
-| `OverlayController` | Adds, positions, drags, snaps and removes the **single** handle window; `apply(prefs)` re-applies side, position, size and opacity live and removes the window in tile-only mode (M3); handles rotation; reports the snapped placement | `WindowManager`, `TYPE_ACCESSIBILITY_OVERLAY` |
+| `OverlayController` | Adds, positions, drags, snaps and removes the **single** handle window; `apply(prefs)` re-applies side, position, size and opacity live and removes the window when **Show handle** is off (M3); handles rotation; reports the snapped placement | `WindowManager`, `TYPE_ACCESSIBILITY_OVERLAY` |
 | `EdgeHandleView` | Plain `View`: draws the pill (idle 4 dp, 12 dp while holding/dragging) and turns touches into intents: tap → show panel (via `PanelToggle`), hold → widen and drag, release → snap | `setSystemGestureExclusionRects`, haptics, `ValueAnimator` |
 | `HandleGestures` / `HandleSnap` | Pure Kotlin: tap vs hold vs ignored movement; reposition deltas; nearest-side and position-percent maths (unit-testable, no Android types) | — |
 | `PanelToggle` | Pure Kotlin with an injectable clock: decides whether a tap re-shows the panel or is swallowed because the panel was shown moments ago | — |
 | `SystemVolume` | Thin wrapper around `AudioManager`: `showPanel()` only | `adjustSuggestedStreamVolume(ADJUST_SAME)`, `FLAG_SHOW_UI` |
-| `VolumeTileService` + `PanelTrampolineActivity` | QS tile (M3): `startActivityAndCollapse` an invisible, non-exported activity (this is what closes the shade), which shows the panel 350 ms later and finishes at once. Works whether or not the accessibility service runs, and starting the process also restarts a killed service immediately | `TileService`, `startActivityAndCollapse` (PendingIntent on API 34+), `StatusBarManager.requestAddTileService` (API 33+) |
+| `VolumeTileService` | QS tile (M3) = the **Show handle** switch: tap toggles `Prefs.handleEnabled`, the tile shows On/Off; long-press opens EdgeVol; turning it on without the accessibility service opens setup. Starting the process also restarts a killed service immediately | `TileService`, `TOGGLEABLE_TILE`, `startActivityAndCollapse` (PendingIntent on API 34+), `StatusBarManager.requestAddTileService` (API 33+) |
 | `MainActivity` / `SetupScreen` | Live service status in three states (Off / enabled but not running / Running), handle settings (side, height, size, opacity), tile card, deep links, Try-it (Compose, stateless) | `Settings` intents, Compose |
 | `Prefs` / `PrefsRepository` | Handle side and vertical position (M2.1); size and opacity (M3) | DataStore Preferences |
 
@@ -75,25 +75,28 @@ sequenceDiagram
     Note over SUI: SystemUI hides its panel on its own timeout
 ```
 
-## Summon flow: Quick Settings tile
+## Quick Settings tile: the "Show handle" switch (M3)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor U as User
     participant T as VolumeTileService
-    participant A as PanelTrampolineActivity
-    participant V as SystemVolume
-    participant SUI as SystemUI volume panel
-    U->>T: tap tile
-    T->>A: startActivityAndCollapse (closes the shade)
-    A->>A: finish() at once (Theme.NoDisplay)
-    Note over A,V: 350 ms later, once the shade is out of the way
-    A->>V: showPanel()
-    V->>SUI: adjustSuggestedStreamVolume(ADJUST_SAME, FLAG_SHOW_UI)
+    participant P as PrefsRepository
+    participant S as VolumeAccessibilityService
+    U->>T: tap tile (On ↔ Off)
+    T->>T: render state + subtitle at once
+    T->>P: update { handleEnabled = !current } (NonCancellable)
+    P-->>S: prefs flow emits
+    S->>S: OverlayController.apply() → add or remove the handle
+    opt turning on while the accessibility service is not enabled
+        T->>U: startActivityAndCollapse(setup screen)
+    end
 ```
 
-The tile doesn't need the accessibility service: showing the panel needs no permission. Starting EdgeVol's process for the tile also makes Android run any pending restart of a killed accessibility service at once, so the tile is the fastest recovery after MIUI's "clear all". Verified on the POCO X2 (Android 11): activity resumed and finished within 20 ms, the panel request followed 350 ms later. The earlier idea of routing the tap through the accessibility service and `GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE` was dropped: that action is API 31+ only and would make the tile depend on the service.
+The tile is a switch (`TOGGLEABLE_TILE` meta-data, `STATE_ACTIVE`/`STATE_INACTIVE`, subtitle On/Off on API 29+) for the same `Prefs.handleEnabled` flag as the setup screen's **Show handle** switch; while the shade is open it follows the stored value. Long-pressing it opens EdgeVol (`QS_TILE_PREFERENCES` on `MainActivity`), and a fresh launch of EdgeVol turns the handle on. Starting EdgeVol's process for the tile also makes Android run any pending restart of a killed accessibility service at once. Verified on the POCO X2: tile off → handle removed in ≈ 60 ms, on → added in ≈ 70 ms, long-press → EdgeVol opened and the handle came back.
+
+*History:* the first M3 tile showed the volume panel through an invisible trampoline activity; the user chose a show/hide switch instead (handle hidden during games or video, back in one tap).
 
 ## Handle gesture state machine
 
@@ -260,9 +263,10 @@ class PrefsRepository(context: Context) {
 
 // M3
 enum class HandleSize(val heightDp: Int) { S(56), M(72), L(120) }
-//   Prefs gains: val size: HandleSize = HandleSize.M, val opacityPct: Int = 35 (0..80)
-//   val Prefs.handleHidden = opacityPct <= 0   // tile-only mode: no handle window at all
-//   DataStore keys: "size" (String), "opacity_pct" (Int)
+//   Prefs gains: val size: HandleSize = HandleSize.M, val opacityPct: Int = 35 (10..80),
+//                val handleEnabled: Boolean = true                // "Show handle" switch and the QS tile
+//   val Prefs.handleHidden = !handleEnabled                       // no handle window at all
+//   DataStore keys: "size" (String), "opacity_pct" (Int), "handle_enabled" (Boolean; missing + opacity 0 = off)
 
 package app.edgevol.system
 data class SetupStatus(                                          // M1; M2 adds the second field, M2.1 the third, M2.2 the fourth
@@ -303,7 +307,7 @@ package app.edgevol.ui.setup
 ```
 
 M1 form: `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`.
-M3 form (current): `SetupScreen(status, prefs, onEnableService, onOpenAppInfo, onTestPanel, onOpenAutostart, onAddTile, onPrefsChange, modifier)`. *Running* adds the **Handle** card (side and size as segmented buttons, height and opacity sliders saving once per whole percent; opacity 0 = "Off (Quick Settings tile only)") and the ready text switches to the tile-only wording when the handle is hidden. A **Quick Settings tile** card shows in every state: *Add tile* button when `canRequestAddTile` (Android 13+), manual steps otherwise. `MainActivity` shows a change at once and saves it with `PrefsRepository.update`; the service picks the saved value up through its own `prefs` collector and moves the real handle. `SetupStatus` gains `canRequestAddTile: Boolean = false`.
+M3 form (current): `SetupScreen(status, prefs, onEnableService, onOpenAppInfo, onTestPanel, onOpenAutostart, onAddTile, onPrefsChange, modifier)`. *Running* adds the **Handle** card (a **Show handle** switch row, side and size as segmented buttons, height 10–90 % and opacity 10–80 % sliders saving once per whole percent and always the final value on release) and the ready text switches to the "handle is hidden" wording when Show handle is off (both texts share one space, so nothing below jumps). A **Quick Settings tile** card shows in every state: *Add tile* button when `canRequestAddTile` (Android 13+), manual steps otherwise. `MainActivity` shows a change at once and saves it with `PrefsRepository.update` (`NonCancellable`; store emissions are ignored while its own saves are pending); the service picks the saved value up through its own `prefs` collector and moves the real handle. A fresh launch sets `handleEnabled = true`. `SetupStatus` gains `canRequestAddTile: Boolean = false`.
 M2.2 form: `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, onOpenAutostart, modifier)`; the *Keep EdgeVol running* (Autostart) card shows in the *Running* and *Enabled but not running* states when `showAutostartHelp`, and the generic restriction hint shows only when it doesn't.
 M2 form (unchanged in M2.1): `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, modifier)`. **Three states (M2.1):** *Off* (disclosure + Enable; the restricted-settings card only when `showRestrictedSettingsHelp`), *Enabled but not running* (plain-language explanation, button to Accessibility settings, a "switch off and on once more" line and a Xiaomi/MIUI hint shown on every phone) and *Running* (ready text). The screen never claims the handle exists unless `serviceRunning`. The *Try it* card shows in all states. `MainActivity` refreshes the status in `onResume` and once more after 1.5 s, because a healthy service in a fresh process connects slightly after the activity. `@Preview`s live in `app/src/debug/java/app/edgevol/ui/` (`ui-tooling` and `ui-tooling-preview` are `debugImplementation`). `MainActivity` stays in Recents so MIUI users can lock it (M2.2).
 

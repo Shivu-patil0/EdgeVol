@@ -32,12 +32,12 @@ private fun SetupScreenHandleSettingsPreview() {
     PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = true, canRequestAddTile = true))
 }
 
-@Preview(name = "Running, tile only (opacity Off)", showBackground = true, heightDp = 1600)
+@Preview(name = "Running, handle hidden (Show handle off)", showBackground = true, heightDp = 1600)
 @Composable
 private fun SetupScreenTileOnlyPreview() {
     PreviewSetup(
         SetupStatus(serviceEnabled = true, serviceRunning = true),
-        Prefs(side = HandleSide.LEFT, size = HandleSize.L, opacityPct = 0),
+        Prefs(side = HandleSide.LEFT, size = HandleSize.L, handleEnabled = false),
     )
 }
 

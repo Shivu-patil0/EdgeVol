@@ -194,21 +194,31 @@ class ResourceTextTest {
     }
 
     @Test
-    fun `panel trampoline activity is not exported`() {
+    fun `the tile is declared as an on-off switch and long-press opens EdgeVol`() {
         val manifest = File(mainDir(), "AndroidManifest.xml").readText()
-        val trampoline = manifest.substringAfter("android:name=\".system.PanelTrampolineActivity\"").substringBefore("/>")
-        assertTrue(trampoline, trampoline.contains("android:exported=\"false\""))
+        val tile = manifest.substringAfter("android:name=\".service.VolumeTileService\"").substringBefore("</service>")
+        assertTrue(tile, tile.contains("android.service.quicksettings.TOGGLEABLE_TILE"))
+        val mainActivity = manifest.substringAfter("android:name=\".MainActivity\"").substringBefore("</activity>")
+        assertTrue(mainActivity, mainActivity.contains("android.service.quicksettings.action.QS_TILE_PREFERENCES"))
+    }
+
+    @Test
+    fun `no invisible trampoline activity remains`() {
+        val manifest = File(mainDir(), "AndroidManifest.xml").readText()
+        assertFalse(manifest.contains("PanelTrampolineActivity"))
+        assertEquals(1, Regex("<activity").findAll(manifest).count())
     }
 
     @Test
     fun `tile and handle settings strings exist`() {
         listOf(
-            "setup_ready_hidden_message", "setup_handle_title", "setup_handle_position",
-            "setup_handle_opacity", "setup_handle_opacity_off", "setup_tile_title",
-            "setup_tile_body", "setup_tile_button", "setup_tile_steps",
+            "setup_ready_hidden_message", "setup_handle_title", "setup_handle_show", "setup_handle_position",
+            "setup_handle_opacity", "setup_tile_title", "setup_tile_body", "setup_tile_button", "setup_tile_steps",
         ).forEach { name -> assertTrue(name, stringResource("res/values/strings.xml", name).isNotBlank()) }
-        assertTrue(stringResource("res/values/strings_system.xml", "tile_label").isNotBlank())
-        assertTrue(stringResource("res/values/strings.xml", "setup_handle_opacity_off").contains("tile"))
+        listOf("tile_label", "tile_state_on", "tile_state_off").forEach { name ->
+            assertTrue(name, stringResource("res/values/strings_system.xml", name).isNotBlank())
+        }
+        assertTrue(stringResource("res/values/strings.xml", "setup_ready_hidden_message").contains("Show handle"))
     }
 
     // Source-text guards

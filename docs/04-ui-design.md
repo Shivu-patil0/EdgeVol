@@ -25,7 +25,7 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 | Vertical position | 40% of screen height (centre of the handle) | Hold + drag; **saved** and restored after a service restart or reboot; a slider in settings comes in M3 |
 | Visual size | 4 dp × 72 dp pill (12 dp while holding/dragging) | S 56 dp / **M 72 dp** / L 120 dp (M3) |
 | Touch area | 24 dp wide (invisible), never resized | — |
-| Opacity | 35% (100% while touched) | 10–80% (0% = "QS tile only" mode) (M3) |
+| Opacity | 35% (100% while touched) | 10–80% (M3); hiding is the separate **Show handle** switch / Quick Settings tile |
 | Color | `primary` from the theme (dynamic color on Android 12+) | — |
 
 **Back-gesture conflict (gesture navigation):** Android's *back* is a **horizontal** inward swipe from either edge. The handle is a tap/hold target, and we register its bounds with `setSystemGestureExclusionRects` (capped at 200 dp per edge; the largest handle is 120 dp). The rect is view-local, so it follows the handle to whichever side it is on. Whether MIUI honours exclusion rects for an accessibility overlay is unverified (`dumpsys window` shows nothing for it) and is part of the manual script.
@@ -68,8 +68,8 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 | Section | Content |
 |---|---|
 | Status | **Three states.** *Off*: disclosure, *Enable*, restricted-settings help (Android 13+). *Enabled but not running*: "On, but not running" with the explanation, the *Keep EdgeVol running* card on Xiaomi/Redmi/POCO (Autostart + lock in Recents), a button to Accessibility settings and "switch it off and on once more". *Running*: "On" and where to find the handle and how to use it (or the tile-only text when opacity is Off), plus the Xiaomi card. The handle is never claimed unless the service is really running |
-| Handle (M3, *Running* only) | Side (Left/Right) · Height slider (10–90%) · Size (Small/Medium/Large = 56/72/120 dp) · Opacity slider (Off–80%; **Off = Quick Settings tile only**, the handle window is removed). Every change moves the real handle live |
-| Quick Settings tile (M3, every state) | What the tile does, and *Add tile* (Android 13+ system prompt) or manual steps (pull down Quick Settings → edit → drag the "Volume" tile) |
+| Handle (M3, *Running* only) | **Show handle** switch · Side (Left/Right) · Height slider (10–90%) · Size (Small/Medium/Large = 56/72/120 dp) · Opacity slider (10–80%). Every change moves the real handle live; opening EdgeVol turns Show handle on |
+| Quick Settings tile (M3, every state) | The **Volume handle** tile is the same Show handle switch (On/Off, long-press opens EdgeVol); *Add tile* (Android 13+ system prompt) or manual steps (pull down Quick Settings → edit → drag the "Volume handle" tile) |
 | Try it | *Show volume panel* button (calls `SystemVolume.showPanel()`) in every state |
 
 ## Logo

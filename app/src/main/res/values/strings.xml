@@ -18,9 +18,10 @@
     <string name="setup_autostart_button">Open Autostart settings</string>
 
     <string name="setup_ready_message">Ready. Look for a thin, faint bar on the edge of your screen (on the right, a little above the middle, until you move it). Tap it to show your phone\'s volume panel, or touch and hold it, then drag it to either side.</string>
-    <string name="setup_ready_hidden_message">Ready. The handle is off (opacity set to Off), so use the Quick Settings tile to show your phone\'s volume panel.</string>
+    <string name="setup_ready_hidden_message">Ready, but the handle is hidden. Turn it back on with the Show handle switch below or the Volume handle tile in Quick Settings.</string>
 
     <string name="setup_handle_title">Handle</string>
+    <string name="setup_handle_show">Show handle</string>
     <string name="setup_handle_side">Side</string>
     <string name="setup_handle_side_left">Left</string>
     <string name="setup_handle_side_right">Right</string>
@@ -30,12 +31,11 @@
     <string name="setup_handle_size_m">Medium</string>
     <string name="setup_handle_size_l">Large</string>
     <string name="setup_handle_opacity">Opacity: %1$d%%</string>
-    <string name="setup_handle_opacity_off">Opacity: Off (Quick Settings tile only)</string>
 
     <string name="setup_tile_title">Quick Settings tile</string>
-    <string name="setup_tile_body">Show your phone\'s volume panel from Quick Settings, even when the handle is off. Tapping the tile also brings EdgeVol back at once if the phone stopped it.</string>
+    <string name="setup_tile_body">The Volume handle tile shows or hides the handle from Quick Settings, so you can hide it during a game or video and bring it back in one tap. Long-press the tile to open EdgeVol. Opening EdgeVol also turns the handle on.</string>
     <string name="setup_tile_button">Add tile</string>
-    <string name="setup_tile_steps">To add it: pull down Quick Settings, tap the edit button (pencil), and drag the EdgeVol “Volume” tile into your tiles.</string>
+    <string name="setup_tile_steps">To add it: pull down Quick Settings, tap the edit button (pencil), and drag the EdgeVol “Volume handle” tile into your tiles.</string>
 
     <string name="setup_disclosure_title">Why EdgeVol needs this</string>
     <string name="setup_disclosure_body">EdgeVol uses Android\'s Accessibility service only to keep its small volume handle on the screen edge, above other apps. It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show its volume panel.</string>

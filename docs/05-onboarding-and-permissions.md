@@ -27,7 +27,7 @@ Recovery when it is still not running: Settings → Accessibility → Downloaded
 
 | Permission / capability | Why | When requested | If denied |
 |---|---|---|---|
-| **Accessibility service** (`BIND_ACCESSIBILITY_SERVICE`, granted by the user enabling it) | Draw the edge handle over every app | Setup step 4 | No handle. The Quick Settings tile still shows the volume panel (it needs no permission) |
+| **Accessibility service** (`BIND_ACCESSIBILITY_SERVICE`, granted by the user enabling it) | Draw the edge handle over every app | Setup step 4 | No handle. Turning the Quick Settings tile on opens setup; the app's *Show volume panel* button still works |
 | `INTERNET` | — | **Never requested** | — |
 | `SYSTEM_ALERT_WINDOW` | — | **Not needed** (accessibility overlay) | — |
 | `ACCESS_NOTIFICATION_POLICY` (DND) | — | **Not needed**: EdgeVol never changes the volume itself, it only shows the system panel, whose sliders SystemUI is allowed to change | — |
