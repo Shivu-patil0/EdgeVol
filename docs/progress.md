@@ -213,3 +213,24 @@ Checks: 163 tests, 0 failures; lint 0 errors / 9 warnings. Supersedes the two M3
 
 - Ruling: hiding is one switch (app + tile) instead of a second meaning of opacity — fewer ways to get the same state — opacity can no longer be set below 10 %.
 - Ruling: the tile no longer shows the volume panel — the user preferred show/hide — with the handle hidden, changing volume takes two steps (tile on, tap the handle) or the app's *Show volume panel* button.
+
+## M4 · Polish ✅
+
+Built directly (fast lane), one independent code review, release build verified on the POCO X2.
+
+| Change | Result |
+|---|---|
+| **App size.** The phone had the *debug* build: 12.5 MB, because debug ships every library un-shrunk (≈ 30 MB of uncompressed dex) plus Compose preview tooling. The release build (R8 + resource shrinking) is **≈ 1.2 MB** | Release installed and used on the phone; no R8 keep rules needed |
+| Personal signing key outside the repo (`~/.android/edgevol/`), used by debug **and** release so they replace each other with `install -r`; `scripts/dev-check.sh release` | Old debug build uninstalled once (user-approved); user redid setup. Release: service binds, handle draws, tap, snap + save, live settings, tile, no crashes |
+| Autostart proof on the release build: `am crash app.edgevol` → restart scheduled in 11 s, the handle came back by itself | Verified (MIUI no longer lists `MIUIOP(10008)` in appops for this install, so this test replaces that check) |
+| Adaptive launcher icon: gradient background drawable, pills + sliver inside the 66 dp safe circle, same foreground as the `monochrome` layer (themed icons, Android 13+) | Rendered under round / squircle / square masks: nothing cropped. Fixes lint `MonochromeLauncherIcon` |
+| `values-night/themes.xml` (dark parent) | No white flash when opening EdgeVol in dark mode (user check: manual row 21) |
+| TalkBack: double-tap reads *Show volume panel*; actions *Move to left/right edge*, *Move up*, *Move down* (10 points, clamped, hidden at the ends), saved like a drag | `HandleSnap.moved` unit-tested; TalkBack itself not run on the phone (manual row 19) |
+| Haptics | No change: `performHapticFeedback` without `FLAG_IGNORE_GLOBAL_SETTING` already follows the system *Touch feedback* setting |
+| Lint: data-extraction rules exclude everything (Android 12+) and `fullBackupContent="false"`; `Uri.fromParts`; `RtlHardcoded` (physical edges), `ViewConstructor` (code-only view), `ClickableViewAccessibility` (tap reaches `performClick`) suppressed with reasons | Lint: only `OldTargetApi` left (earlier ruling) |
+| Doc images: handle states, interaction, architecture and onboarding redrawn for hold-drag-snap, tile = show/hide switch, Autostart step | Rendered and checked |
+
+Checks: 167 tests, 0 failures; lint 0 errors / 1 warning; debug + release build; merged release manifest still declares only the androidx dynamic-receiver permission.
+
+- Ruling: debug and release share the personal key — switching builds keeps the accessibility service enabled — losing the key means uninstall + redo setup, so the user should back it up.
+- Ruling: no Robolectric for a view-level TalkBack test — new dependency — the move rules are pure and unit-tested, the view glue is covered by review and manual row 19.

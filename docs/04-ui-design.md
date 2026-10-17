@@ -60,8 +60,10 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 
 ## Accessibility of our own UI
 
-- The handle exposes a content description ("EdgeVol volume handle"); TalkBack's double-tap click always shows the panel. Custom accessibility actions (*Show volume panel*, *Move to left/right edge*) are planned for M4 so Switch Access users don't need the hold-and-drag gesture.
+- The handle exposes a content description ("EdgeVol volume handle"); TalkBack's double-tap reads and does *Show volume panel*. Its accessibility actions menu adds *Move to left/right edge*, *Move up* and *Move down* (10 points of height each, hidden at the 10% / 90% ends), so TalkBack and Switch Access users don't need the hold-and-drag gesture. They save the placement exactly like a drag.
+- Haptics use `performHapticFeedback` without `FLAG_IGNORE_GLOBAL_SETTING`, so they follow the system *Touch feedback* setting.
 - Setup screen: content descriptions, ≥ 48 dp targets, font scaling, and *Remove animations* respected.
+- Dark mode: the window background follows the system theme (`values-night/themes.xml`), so opening EdgeVol in dark mode doesn't flash white before Compose draws.
 
 ## Setup / settings screen
 
@@ -76,4 +78,4 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 
 | | |
 |---|---|
-| <img src="images/logo.svg" width="96"/> | **Temporary logo.** Indigo→violet rounded square, three white volume pills at different levels, and the edge-handle sliver on the right. M4 converts it into an adaptive icon (`ic_launcher_foreground` vector + gradient background) and uses [`logo-mono.svg`](images/logo-mono.svg) for the QS tile icon. |
+| <img src="images/logo.svg" width="96"/> | **Temporary logo.** Indigo→violet rounded square, three white volume pills at different levels, and the edge-handle sliver on the right. The launcher icon is the adaptive version (M4): `drawable/ic_launcher_background` (the gradient) and `drawable/ic_launcher_foreground` (pills + sliver kept inside the 66 dp safe circle, so round, squircle and square masks never crop it). The foreground doubles as the `monochrome` layer for Android 13+ themed icons. [`logo-mono.svg`](images/logo-mono.svg) is the QS tile icon. |

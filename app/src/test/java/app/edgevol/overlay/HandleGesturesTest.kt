@@ -3,6 +3,7 @@ package app.edgevol.overlay
 import app.edgevol.data.HandleSide
 import app.edgevol.overlay.HandleGestures.State
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /** HandleGestures with slop = 8f and tapMaxTravel = 48f (per axis from DOWN). */
@@ -394,5 +395,35 @@ class HandleGesturesTest {
     @Test
     fun `windowTopPx is zero for a non-positive height`() {
         assertEquals(0, HandleSnap.windowTopPx(40f, 0, 198))
+    }
+
+    @Test
+    fun `moved to the other side keeps the height`() {
+        val result = HandleSnap.moved(HandleSide.RIGHT, 40, HandleMove.OTHER_SIDE)!!
+        assertEquals(HandleSide.LEFT, result.side)
+        assertEquals(40, result.positionPct)
+        assertEquals(HandleSide.RIGHT, HandleSnap.moved(HandleSide.LEFT, 40, HandleMove.OTHER_SIDE)!!.side)
+    }
+
+    @Test
+    fun `moved up and down step by ten points on the same side`() {
+        val up = HandleSnap.moved(HandleSide.LEFT, 40, HandleMove.UP)!!
+        assertEquals(HandleSide.LEFT, up.side)
+        assertEquals(30, up.positionPct)
+        assertEquals(50, HandleSnap.moved(HandleSide.LEFT, 40, HandleMove.DOWN)!!.positionPct)
+    }
+
+    @Test
+    fun `moved clamps a partial step to the range`() {
+        assertEquals(10, HandleSnap.moved(HandleSide.RIGHT, 15, HandleMove.UP)!!.positionPct)
+        assertEquals(90, HandleSnap.moved(HandleSide.RIGHT, 85, HandleMove.DOWN)!!.positionPct)
+    }
+
+    @Test
+    fun `moved is null at the ends of the range`() {
+        assertNull(HandleSnap.moved(HandleSide.RIGHT, 10, HandleMove.UP))
+        assertNull(HandleSnap.moved(HandleSide.RIGHT, 90, HandleMove.DOWN))
+        assertNull(HandleSnap.moved(HandleSide.RIGHT, 5, HandleMove.UP))
+        assertEquals(80, HandleSnap.moved(HandleSide.RIGHT, 95, HandleMove.UP)!!.positionPct)
     }
 }

@@ -134,8 +134,9 @@ Run on your phone with the service on. Tick or write a few words per row; anythi
 | 16 | Tap "clear all" in Recents | The handle stays (locked). Unlocked but with Autostart: it comes back within about a minute, or at once when you open EdgeVol |
 | 17 | Setup screen → Handle: tap Left/Right, Small/Medium/Large, move Height and Opacity, flip **Show handle** | The real handle moves, resizes and fades live; Show handle off removes it and the text says how to bring it back |
 | 18 | Add the "Volume handle" tile (Quick Settings → edit → drag it in); tap it twice; long-press it | Off ↔ On hides and shows the handle; long-press opens EdgeVol, which turns the handle on |
-| 19 | Optional, TalkBack: focus the handle and double-tap | The panel shows |
+| 19 | Optional, TalkBack: focus the handle, double-tap; then open the actions menu (three-finger tap or swipe up then right) | Double-tap shows the panel; the menu offers *Move to left edge* (or right), *Move up*, *Move down*, and each moves the handle and is kept after a restart |
 | 20 | Optional: setup screen at 200% font size | Nothing clipped |
+| 21 | Look at the launcher icon; switch the phone to dark mode and open EdgeVol | Indigo gradient icon with three pills and a sliver, not cropped; no white flash on opening in dark mode |
 
 Never choose EdgeVol in **Developer options → Select debug app**: Android then force-stops it whenever it leaves Recents. Avoid `uiautomator dump` while testing the handle: it suspends accessibility services while it runs, so EdgeVol's service is unbound and re-bound (the handle disappears for a moment).
 
@@ -151,7 +152,7 @@ Never choose EdgeVol in **Developer options → Select debug app**: Android then
 | Side + position persist across a service restart / reboot | ☐ | ☐ | ☐ | ☑ restart (adb) · ☐ reboot |
 | Gestures with **gesture nav** (no accidental back on either edge, incl. after snapping left) | ☐ | ☐ | ☐ | ☐ by hand |
 | Gestures with **3-button nav** | ☐ | ☐ | ☐ | ☐ |
-| QS tile → shade collapses (31+) and panel shows (M3) | ☐ | ☐ | ☐ | ☐ |
+| QS tile switches the handle off and on (M3.1); long-press opens EdgeVol | ☐ | ☐ | ☐ | ☑ by hand |
 | Handle visible over the notification shade | ☐ | ☐ | ☐ | ☐ |
 | Over an app using `HIDE_OVERLAY_WINDOWS` (e.g. banking) | n/a | ☐ | ☐ | ☐ |
 | Expand system panel → ring / notification / alarm reachable | ☐ | ☐ | ☐ | ☐ |
@@ -160,7 +161,7 @@ Never choose EdgeVol in **Developer options → Select debug app**: Android then
 | Reboot: handle returns without opening the app, at the saved side/height | ☐ | ☐ | ☐ | ☐ |
 | App cleared from Recents (MIUI): setup screen shows *Enabled but not running*; off/on recovers | ☐ | ☐ | ☐ | ☑ crash/force-stop (adb) · ☐ real Recents swipe |
 | Screen off/on: handle persists | ☐ | ☐ | ☐ | ☐ |
-| TalkBack: double-tap on the handle shows the panel | ☐ | ☐ | ☐ | ☐ |
+| TalkBack: double-tap on the handle shows the panel; Move actions move and save it | ☐ | ☐ | ☐ | ☐ |
 
 ## Release (personal sideload)
 

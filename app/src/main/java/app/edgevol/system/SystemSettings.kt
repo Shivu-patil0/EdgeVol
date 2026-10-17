@@ -45,7 +45,7 @@ object SystemSettings {
     fun accessibilitySettingsIntent(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
 
     fun appDetailsIntent(context: Context): Intent =
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
 
     /** MIUI's Autostart list. Not public API: callers fall back to [appDetailsIntent] if it fails. */
     fun autostartSettingsIntent(): Intent = Intent().setComponent(

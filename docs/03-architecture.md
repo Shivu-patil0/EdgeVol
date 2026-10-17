@@ -47,6 +47,7 @@ A tap shows the panel and remembers the time (`SystemClock.elapsedRealtime`). If
 - **Why 1800 ms:** MIUI's timeout is exactly 2.0 s from `showVolumeDialogH` (measured on the phone), stock Android is about 3 s. 1800 ms is just below the shortest known timeout, so we hardly ever swallow a tap when the panel is already gone. A wrong guess costs one extra tap (swallowed tap, or on stock Android a tap after 1.8 s re-shows while the panel is still up), never a failure.
 - **What it does *not* do:** it does not close the panel on MIUI (see above); the panel just times out within ≤ 2 s. Whether stock Android / other skins close it on a touch over our handle is unverified; the setup copy therefore only promises "tap to show".
 - TalkBack's click (`performClick()` without touch events) always shows the panel and records the time.
+- TalkBack move actions (M4): `EdgeHandleView` adds *Move to left/right edge*, *Move up*, *Move down* to its node info (ids in `values/ids_system.xml`, only the moves `HandleSnap.moved` allows); performing one calls `OverlayController`, which applies the new placement and saves it through the same `onPlacementChanged` path as a finished drag.
 
 ## Summon flow: edge handle
 

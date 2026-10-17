@@ -148,6 +148,26 @@ internal object HandleSnap {
         val short = min(displayWidthPx, displayHeightPx)
         return if (landscape) ScreenSize(long, short) else ScreenSize(short, long)
     }
+
+    /**
+     * Placement after a TalkBack move action (TalkBack users can't hold and drag), or null when the
+     * handle can't move that way. Only side and positionPct of the result are meaningful.
+     */
+    fun moved(side: HandleSide, pct: Int, move: HandleMove): Prefs? {
+        val min = HandleDefaults.POSITION_MIN_PERCENT.toInt()
+        val max = HandleDefaults.POSITION_MAX_PERCENT.toInt()
+        val current = pct.coerceIn(min, max)
+        return when (move) {
+            HandleMove.OTHER_SIDE ->
+                Prefs(side = if (side == HandleSide.LEFT) HandleSide.RIGHT else HandleSide.LEFT, positionPct = current)
+            HandleMove.UP ->
+                if (current <= min) null else Prefs(side = side, positionPct = max(min, current - HandleDefaults.A11Y_STEP_PCT))
+            HandleMove.DOWN ->
+                if (current >= max) null else Prefs(side = side, positionPct = min(max, current + HandleDefaults.A11Y_STEP_PCT))
+        }
+    }
 }
+
+internal enum class HandleMove { OTHER_SIDE, UP, DOWN }
 
 internal data class ScreenSize(val widthPx: Int, val heightPx: Int)

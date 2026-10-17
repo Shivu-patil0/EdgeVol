@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TalkBack custom actions on the edge handle. -->
+    <item name="handle_action_other_side" type="id" />
+    <item name="handle_action_up" type="id" />
+    <item name="handle_action_down" type="id" />
+</resources>

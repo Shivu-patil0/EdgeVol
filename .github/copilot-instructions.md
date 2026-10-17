@@ -23,8 +23,8 @@ A **manager** agent coordinates four specialists ([docs/07](../docs/07-agent-tea
 | Owner | Paths |
 |---|---|
 | `manager` | `docs/**`, `.github/**`, `.gitignore`, `README.md`, git commits |
-| `platform-dev` | `settings.gradle.kts`, `build.gradle.kts`, `gradle/**`, `gradlew*`, `app/build.gradle.kts`, `app/proguard-rules.pro`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/app/edgevol/{audio,overlay,service,data,system}/**`, `app/src/main/res/xml/**`, `app/src/main/res/values/strings_system.xml` |
-| `ui-dev` | `app/src/main/java/app/edgevol/{ui/**,MainActivity.kt}`, `app/src/debug/java/app/edgevol/ui/**`, `app/src/main/res/{drawable*,mipmap*}/**`, `app/src/main/res/values/{strings,colors,themes}.xml` |
+| `platform-dev` | `settings.gradle.kts`, `build.gradle.kts`, `gradle/**`, `gradlew*`, `app/build.gradle.kts`, `app/proguard-rules.pro`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/app/edgevol/{audio,overlay,service,data,system}/**`, `app/src/main/res/xml/**`, `app/src/main/res/values/{strings_system,ids_system}.xml` |
+| `ui-dev` | `app/src/main/java/app/edgevol/{ui/**,MainActivity.kt}`, `app/src/debug/java/app/edgevol/ui/**`, `app/src/main/res/{drawable*,mipmap*}/**`, `app/src/main/res/values/{strings,themes}.xml`, `app/src/main/res/values-night/themes.xml` |
 | `qa` | `app/src/test/**`, `app/src/androidTest/**`, `scripts/**` (in the manager's fast lane, `platform-dev` and `ui-dev` may also add unit tests for their own code under `app/src/test/**`) |
 | `analyst` | nothing (read-only) |
 

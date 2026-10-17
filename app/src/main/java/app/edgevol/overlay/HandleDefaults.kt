@@ -22,6 +22,9 @@ internal object HandleDefaults {
 
     const val LONG_PRESS_MS: Long = 500L
 
+    /** How far one TalkBack "Move up" / "Move down" action moves the handle, in percent points. */
+    const val A11Y_STEP_PCT: Int = 10
+
     /**
      * Debounce window after our own panel show. A tap that starts within this window is treated as
      * a "close" tap and does nothing, because the panel is assumed to still be up; re-requesting it

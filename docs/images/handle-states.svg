@@ -7,11 +7,23 @@
       .cap { font-size: 16px; font-weight: 700; }
       .sub { font-size: 13px; fill: #4B5563; }
       .ann { font-size: 12px; fill: #4338CA; font-weight: 600; }
+      .tag { font-size: 10.5px; fill: #6B7280; font-style: italic; }
       .bar { fill: #E5E7EB; }
     </style>
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#4338CA"/>
     </marker>
+    <filter id="sh" x="-40%" y="-20%" width="180%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+    <symbol id="speaker" viewBox="-8 -8 16 16" overflow="visible">
+      <path d="M-7,-2.6 h3.2 l4.3,-3.8 v12.8 l-4.3,-3.8 h-3.2 z"/>
+      <path d="M2.6,-2.8 q2.4,2.8 0,5.6 M4.8,-5.2 q4.4,5.2 0,10.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="bell" viewBox="-8 -8 16 16" overflow="visible">
+      <path d="M-6,3.5 h12 l-1.6,-2.2 v-3.3 a4.4,4.4 0 0 0 -8.8,0 v3.3 z"/>
+      <circle cx="0" cy="5.6" r="1.6"/>
+    </symbol>
     <!-- background content for an edge close-up (226 x 340) -->
     <symbol id="edge" viewBox="0 0 240 340">
       <rect x="200" width="40" height="340" rx="20" fill="#111827"/>
@@ -37,50 +49,55 @@
   <text x="80" y="336" class="ann">touch target: 24 dp wide</text>
   <path d="M232,330 L264,306" stroke="#4338CA" stroke-width="1.3"/>
 
-  <!-- 2. Pressed: screen edge at x = 566 -->
+  <!-- 2. Tap: screen edge at x = 566 -->
   <use href="#edge" x="340" y="90" width="240" height="340"/>
-  <rect x="558" y="220" width="8" height="80" rx="4" fill="#6366F1"/>
-  <path d="M546,246 q-6,14 0,28 M536,240 q-10,20 0,40" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round"/>
-  <text x="360" y="200" class="ann">pressed: 8 dp · 100% · haptic tick</text>
-
-  <!-- 3. Drag along the edge = volume rocker: screen edge at x = 846 -->
-  <use href="#edge" x="620" y="90" width="240" height="340"/>
-  <rect x="838" y="150" width="8" height="200" rx="4" fill="#6366F1"/>
-  <circle cx="842" cy="166" r="13" fill="#6366F1" fill-opacity="0.25" stroke="#6366F1" stroke-width="2"/>
-  <path d="M814,340 L814,176" stroke="#4338CA" stroke-width="2.4" marker-end="url(#arr)"/>
-  <g stroke="#4338CA" stroke-width="2" stroke-linecap="round">
-    <path d="M808,310 h12"/><path d="M808,278 h12"/><path d="M808,246 h12"/><path d="M808,214 h12"/>
+  <rect x="562" y="224" width="4" height="72" rx="2" fill="#6366F1"/>
+  <path d="M552,246 q-6,14 0,28 M542,240 q-10,20 0,40" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round"/>
+  <!-- Android's own volume panel (generic, Pixel-like) -->
+  <g filter="url(#sh)">
+    <rect x="490" y="180" width="36" height="180" rx="18" fill="#F4F2FA"/>
   </g>
-  <text x="798" y="314" class="ann" text-anchor="end">+1</text>
-  <text x="798" y="282" class="ann" text-anchor="end">+1</text>
-  <text x="798" y="250" class="ann" text-anchor="end">+1</text>
-  <text x="798" y="218" class="ann" text-anchor="end">+1</text>
-  <text x="640" y="380" class="ann">24 dp of drag = 1 step</text>
+  <circle cx="508" cy="198" r="11" fill="#E2DEF0"/>
+  <use href="#bell" x="502" y="192" width="12" height="12" fill="#3F3A56"/>
+  <rect x="497" y="216" width="22" height="112" rx="11" fill="#E2DEF0"/>
+  <rect x="497" y="268" width="22" height="60" rx="11" fill="#6750A4"/>
+  <use href="#speaker" x="502" y="312" width="12" height="12" fill="#FFFFFF" color="#FFFFFF"/>
+  <g fill="#3F3A56"><circle cx="502" cy="344" r="1.6"/><circle cx="508" cy="344" r="1.6"/><circle cx="514" cy="344" r="1.6"/></g>
+  <text x="508" y="378" class="tag" text-anchor="middle">Android's panel</text>
+  <text x="360" y="166" class="ann">tap: 100% opacity · haptic tick</text>
+  <text x="360" y="412" class="ann">2nd tap within 1.8 s: ignored</text>
 
-  <!-- 4. Reposition: screen edge at x = 1126 -->
+  <!-- 3. Hold, then drag: screen edge at x = 846 -->
+  <use href="#edge" x="620" y="90" width="240" height="340"/>
+  <rect x="842" y="224" width="4" height="72" rx="2" fill="none" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <path d="M834,262 C800,262 772,284 748,308" fill="none" stroke="#4338CA" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <rect x="724" y="292" width="12" height="72" rx="6" fill="#6366F1"/>
+  <circle cx="730" cy="328" r="15" fill="#6366F1" fill-opacity="0.22" stroke="#6366F1" stroke-width="2"/>
+  <text x="640" y="166" class="ann">hold 500 ms → 12 dp · haptic</text>
+  <text x="640" y="412" class="ann">then drag anywhere</text>
+
+  <!-- 4. Release: screen edge at x = 1126 -->
   <use href="#edge" x="900" y="90" width="240" height="340"/>
-  <rect x="1122" y="140" width="4" height="72" rx="2" fill="none" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="3 3"/>
-  <rect x="1122" y="320" width="4" height="72" rx="2" fill="none" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="3 3"/>
-  <rect x="1120" y="226" width="6" height="80" rx="3" fill="#6366F1"/>
-  <path d="M1100,222 L1100,170" stroke="#4338CA" stroke-width="2.2" marker-end="url(#arr)"/>
-  <path d="M1100,310 L1100,362" stroke="#4338CA" stroke-width="2.2" marker-end="url(#arr)"/>
-  <text x="920" y="270" class="ann">long-press 500 ms</text>
-  <text x="920" y="288" class="ann">then drag</text>
+  <rect x="1046" y="292" width="12" height="72" rx="6" fill="none" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <path d="M1064,328 L1112,328" stroke="#4338CA" stroke-width="2.2" marker-end="url(#arr)"/>
+  <rect x="1122" y="292" width="4" height="72" rx="2" fill="#6366F1" opacity="0.35"/>
+  <text x="920" y="166" class="ann">release → nearer edge</text>
+  <text x="920" y="412" class="ann">height saved: 70%</text>
 
   <!-- captions -->
   <text x="170"  y="470" class="cap" text-anchor="middle">Idle</text>
   <text x="170"  y="494" class="sub" text-anchor="middle">nearly invisible; wider invisible</text>
   <text x="170"  y="514" class="sub" text-anchor="middle">touch area makes it easy to hit</text>
 
-  <text x="450"  y="470" class="cap" text-anchor="middle">Pressed / tap</text>
-  <text x="450"  y="494" class="sub" text-anchor="middle">grows + full opacity + haptic; a tap</text>
-  <text x="450"  y="514" class="sub" text-anchor="middle">shows Android's volume panel</text>
+  <text x="450"  y="470" class="cap" text-anchor="middle">Tap</text>
+  <text x="450"  y="494" class="sub" text-anchor="middle">full opacity + haptic tick; Android's</text>
+  <text x="450"  y="514" class="sub" text-anchor="middle">own volume panel appears</text>
 
-  <text x="730"  y="470" class="cap" text-anchor="middle">Drag up / down</text>
-  <text x="730"  y="494" class="sub" text-anchor="middle">virtual Volume +/− keys; vertical, so it</text>
-  <text x="730"  y="514" class="sub" text-anchor="middle">doesn't fight the horizontal back gesture</text>
+  <text x="730"  y="470" class="cap" text-anchor="middle">Hold + drag</text>
+  <text x="730"  y="494" class="sub" text-anchor="middle">hold 500 ms: haptic, widens to 12 dp,</text>
+  <text x="730"  y="514" class="sub" text-anchor="middle">then follows the finger anywhere</text>
 
-  <text x="1010" y="470" class="cap" text-anchor="middle">Reposition</text>
-  <text x="1010" y="494" class="sub" text-anchor="middle">move along the edge; position</text>
-  <text x="1010" y="514" class="sub" text-anchor="middle">is saved in Prefs</text>
+  <text x="1010" y="470" class="cap" text-anchor="middle">Release</text>
+  <text x="1010" y="494" class="sub" text-anchor="middle">snaps to the nearer left / right edge;</text>
+  <text x="1010" y="514" class="sub" text-anchor="middle">height % saved (kept on rotation)</text>
 </svg>

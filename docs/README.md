@@ -55,8 +55,8 @@ EdgeVol is a minimal Android app that replaces the hardware volume keys with an 
 | **M2.1 Handle rework** | Drag-volume removed; tap toggle; hold → widen → drag → snap to either side; side + position persisted (DataStore `Prefs` subset, brought forward from M3); setup screen with Off / enabled-but-not-running / Running states | ✅ built and checked on a POCO X2 ([progress](progress.md)) |
 | **M2.2 Survival & rotation** | Handle keeps its relative height on rotation; one-time *Keep EdgeVol running* card (MIUI Autostart + lock in Recents) | ✅ 146 unit tests, lint, manifests; rotation, Autostart restart and locked "clear all" verified on a POCO X2 ([progress](progress.md#m22--survival-and-rotation-)) |
 | **M3 Triggers & settings** | Quick Settings tile "Volume handle" = show/hide switch (long-press opens EdgeVol; opening EdgeVol turns the handle on); handle Show switch, side, height, size and opacity on the setup screen, applied live | ✅ 163 unit tests, lint, manifests; settings and the tile verified on a POCO X2 ([progress](progress.md#m3--triggers-and-settings-)) |
-| **M4 Polish** | Haptics, accessibility actions on the handle, adaptive launcher icon from the logo, dark/light, dynamic color | ⬜ |
-| **M5 Test & ship** | Unit + Compose UI tests, emulator/device matrix, signed release APK | ⬜ |
+| **M4 Polish** | Release build + personal signing key (≈ 1.2 MB APK), adaptive launcher icon with themed (monochrome) layer, no white flash in dark mode, TalkBack move actions on the handle, haptics follow the system setting, lint cleanup, doc images refreshed | ✅ 167 unit tests, lint (only the agreed `OldTargetApi`), manifests; release build verified on a POCO X2 ([progress](progress.md#m4--polish-)) |
+| **M5 Test & ship** | Compose UI tests, emulator/device matrix, TalkBack and non-MIUI checks | ⬜ |
 
 ## Logo (temporary)
 

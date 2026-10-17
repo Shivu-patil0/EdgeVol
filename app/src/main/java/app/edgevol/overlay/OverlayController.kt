@@ -1,5 +1,6 @@
 package app.edgevol.overlay
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.PixelFormat
@@ -22,6 +23,8 @@ import kotlin.math.roundToInt
  *
  * [onPlacementChanged] is called only with the snapped placement after a completed drag.
  */
+// RtlHardcoded: the handle hugs a physical screen edge (HandleSide), whatever the text direction.
+@SuppressLint("RtlHardcoded")
 internal class OverlayController(
     private val context: Context,
     private val volume: SystemVolume,
@@ -52,6 +55,11 @@ internal class OverlayController(
         override fun onEnd(rawX: Float, rawY: Float, moved: Boolean) = endReposition(rawX, moved)
 
         override fun onCancel() = cancelReposition()
+
+        override fun canMove(move: HandleMove): Boolean =
+            view != null && !dragging && HandleSnap.moved(side, positionPercent.roundToInt(), move) != null
+
+        override fun onAccessibilityMove(move: HandleMove): Boolean = accessibilityMove(move)
     }
 
     /**
@@ -175,6 +183,17 @@ internal class OverlayController(
         if (!dragging) return
         dragging = false
         applyPlacement()
+    }
+
+    private fun accessibilityMove(move: HandleMove): Boolean {
+        if (view == null || dragging) return false
+        val placement = HandleSnap.moved(side, positionPercent.roundToInt(), move) ?: return false
+        side = placement.side
+        positionPercent = placement.positionPct.toFloat()
+        applyPlacement()
+        Log.d(TAG, "a11y move: $move side=$side pct=${placement.positionPct}")
+        onPlacementChanged(placement)
+        return true
     }
 
     /** Applies stored side and percent to the window and tells the view. */

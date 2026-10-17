@@ -1,18 +1,21 @@
 package app.edgevol.overlay
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityNodeInfo
 import app.edgevol.R
 import app.edgevol.audio.SystemVolume
 import app.edgevol.data.HandleSide
@@ -29,6 +32,12 @@ internal interface RepositionListener {
 
     /** The gesture was cancelled by the system; restore the pre-drag placement. */
     fun onCancel()
+
+    /** Whether the TalkBack action for [move] should be offered right now. */
+    fun canMove(move: HandleMove): Boolean
+
+    /** Performs a TalkBack move action; returns false if nothing moved. */
+    fun onAccessibilityMove(move: HandleMove): Boolean
 }
 
 /**
@@ -36,6 +45,8 @@ internal interface RepositionListener {
  * system volume panel; holding then dragging repositions the handle. Gesture maths lives in
  * [HandleGestures].
  */
+// ViewConstructor: created only in code by OverlayController, never inflated from XML.
+@SuppressLint("ViewConstructor")
 internal class EdgeHandleView(
     context: Context,
     private val volume: SystemVolume,
@@ -154,6 +165,45 @@ internal class EdgeHandleView(
         return true
     }
 
+    // TalkBack can't hold and drag, so moving is offered as actions; double-tap reads "show volume panel".
+    override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
+        super.onInitializeAccessibilityNodeInfo(info)
+        info.addAction(
+            AccessibilityNodeInfo.AccessibilityAction(
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK.id,
+                context.getString(R.string.handle_action_show_panel),
+            ),
+        )
+        for (move in HandleMove.entries) {
+            if (repositionListener.canMove(move)) {
+                info.addAction(AccessibilityNodeInfo.AccessibilityAction(actionId(move), actionLabel(move)))
+            }
+        }
+    }
+
+    override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
+        val move = HandleMove.entries.firstOrNull { actionId(it) == action }
+            ?: return super.performAccessibilityAction(action, arguments)
+        return repositionListener.onAccessibilityMove(move)
+    }
+
+    private fun actionId(move: HandleMove): Int = when (move) {
+        HandleMove.OTHER_SIDE -> R.id.handle_action_other_side
+        HandleMove.UP -> R.id.handle_action_up
+        HandleMove.DOWN -> R.id.handle_action_down
+    }
+
+    private fun actionLabel(move: HandleMove): String = context.getString(
+        when (move) {
+            HandleMove.OTHER_SIDE ->
+                if (side == HandleSide.RIGHT) R.string.handle_action_move_left else R.string.handle_action_move_right
+            HandleMove.UP -> R.string.handle_action_move_up
+            HandleMove.DOWN -> R.string.handle_action_move_down
+        },
+    )
+
+    // A tap reaches performClick() through handle(HandleAction.ShowPanel); lint can't see that.
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
