@@ -5,7 +5,7 @@
 | Tool | Status on this machine | Plan |
 |---|---|---|
 | JDK 17 | ✅ present (JDK 17.0.15; not the default `java`) | Export `JAVA_HOME` to it for every Gradle command, e.g. `JAVA_HOME=<path to JDK 17> ./gradlew …`. Never commit the path or `org.gradle.java.home` |
-| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `platforms/android-37.0` (auto-downloaded by Gradle, required by `compileSdk 37`), `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). `sdk.dir` is in the git-ignored `local.properties`. No emulator installed. Test phone: POCO X2 (Android 11, MIUI 12.5) connected over Wi-Fi debugging, see below |
+| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `platforms/android-37.0` (auto-downloaded by Gradle, required by `compileSdk 37`), `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). `sdk.dir` is in the git-ignored `local.properties`. No emulator (user decision in M5: Robolectric simulates Android on the JVM instead). Test phone: POCO X2 (Android 11, MIUI 12.5) connected over Wi-Fi debugging, see below |
 | Gradle | ✅ wrapper **9.8.1** (`-bin`, sha256 pinned); AGP **9.4.1** with built-in Kotlin; Kotlin **2.4.21**; Compose BOM **2026.09.00** | No global install needed. If the wrapper download times out (GitHub release-assets redirect), retry or pre-seed `~/.gradle/wrapper/dists` |
 | Node / `npx` | ✅ present | Only used for the `skills` CLI |
 
@@ -58,12 +58,14 @@ Lint must report 0 errors; warnings are reported, not blocking.
 
 ```bash
 ./gradlew assembleDebug                  # build
-./gradlew installDebug                   # install on the connected device/emulator
-./gradlew testDebugUnitTest              # JVM + Robolectric tests
-./gradlew connectedDebugAndroidTest      # on-device Compose UI tests
+./gradlew installDebug                   # install on the connected phone
+./gradlew testDebugUnitTest              # JVM + Robolectric tests (incl. Compose UI), ≈ 25 s warm
+scripts/phone-check.sh --restart         # drives the phone, ~35 s; ask the user first
 ```
 
-`ui-tooling` and `ui-tooling-preview` are `debugImplementation` only, so `@Preview`s live in `app/src/debug/`. The **debug** merged manifest therefore also contains the exported, debug-only `androidx.compose.ui.tooling.PreviewActivity`; the release manifest must not. Previews are compile-checked only (no preview renderer in the CLI-only toolchain).
+**Never run `./gradlew connectedDebugAndroidTest` against your phone:** it uninstalls EdgeVol when it finishes, which switches the accessibility service off and wipes Autostart and the Recents lock.
+
+`ui-tooling` and `ui-tooling-preview` are `debugImplementation` only, so `@Preview`s live in `app/src/debug/`. The **debug** merged manifest therefore also contains the exported, debug-only `androidx.compose.ui.tooling.PreviewActivity`, and (from `ui-test-manifest`, M5) the empty `androidx.activity.ComponentActivity` that Compose UI tests launch; the release manifest must contain neither (checked in M5). Previews are compile-checked only (no preview renderer in the CLI-only toolchain).
 
 ## Connecting a phone over Wi-Fi (no USB cable)
 
@@ -97,18 +99,22 @@ adb shell dumpsys window windows | grep -i edgevol
 | Layer | Tooling | What's covered |
 |---|---|---|
 | **Unit** (JVM) | JUnit | `HandleGestures` (tap vs hold vs ignored movement, slop/tap-travel thresholds, reposition deltas, `moved`, cancel) and `HandleSnap` (side by half-screen, 10–90% clamp); `PanelToggle` with a fake clock (swallow window, boundary, reset, `markShown`); `PrefsRepository` against a temp-file DataStore (defaults, round trip, clamping, wrong-typed/unknown/corrupt data); `SetupState` mapping; `SetupStatus` defaults; `SystemVolume.showPanel()` via the injected lambda; resource-text and manifest guards (disclosure == a11y description, no `INTERNET`, no drag-volume leftovers) |
-| **Compose UI** | `createComposeRule` | Setup screen: Off / enabled-but-not-running / Running states, buttons fire the right callbacks; prefs controls update `Prefs` (M3) |
-| **On-device** | Instrumented tests + adb | Service connects and the handle window exists; tap shows the panel (`vol.MiuiVolumeDialogImp-plugin` log); a second tap within 1.8 s does not re-show it; hold + drag snaps to a side at the dragged height (`dumpsys window windows` frame); side/position survive a service restart (DataStore file via `run-as`) |
-| **Manual matrix** | Emulators + your phone | See below |
+| **Robolectric** (JVM, simulated Android) | Robolectric 4.17, Compose `createComposeRule`, `androidx.test.ext:junit` | `SetupScreenTest` (API 35): Off / enabled-but-not-running / Running, Xiaomi card, restricted-settings card, *Show handle* switch, side and size, both sliders, tile card with and without the Android 13+ prompt, *Try it*. `OverlayControllerTest` (API 26 / 30 / 35): exactly one `TYPE_ACCESSIBILITY_OVERLAY` + `FLAG_NOT_FOCUSABLE` window at the saved place, same window on repeated prefs, hide/show, live settings, rotation keeps the relative height, TalkBack click → `showPanel()`, Move actions (labels, moves, saves, none at the ends). `VolumeTileServiceTest` (API 26 / 30 / 35): renders the stored state (subtitle on 29+), a tap flips and saves it, turning on without the service opens setup (Intent path, 26 / 30) |
+| **Phone** | `scripts/phone-check.sh [--restart]` | Service bound + one handle window, tap → panel, second tap swallowed, hold-drag-snap to the other edge and back at the same height + saved, rotation keeps the relative height and the exact portrait spot, tile (skipped on MIUI: adb can't click its tiles), `--restart`: process killed from the home screen → handle back in a new process |
+| **Manual** | Your phone | Checklist and matrix below |
+
+Robolectric runs Android up to API 35 on JDK 17 (36+ needs JDK 21). Its first run downloads one Android image per simulated version into `~/.m2` (≈ 0.4 GB for 26, 30 and 35). The new tests were mutation-checked: removing `FLAG_NOT_FOCUSABLE`, the tile's "open setup", or the setup screen's hint condition each makes them fail. They don't cover real system behaviour (the panel itself, OEM skins), which is what the phone checks are for.
 
 ### Driving the phone with adb (verified 2026-10-17, POCO X2 / MIUI 12.5)
 
-With MIUI *USB debugging (Security settings)* on, `adb shell input tap|swipe|motionevent` and `uiautomator dump` work, so the gestures can be scripted **inside EdgeVol, Settings and the home screen only**:
+With MIUI *USB debugging (Security settings)* on, `adb shell input tap|swipe|motionevent` and `uiautomator dump` work, so the gestures can be scripted **inside EdgeVol, Settings and the home screen only**. `scripts/phone-check.sh` packages the checks below; it opens EdgeVol first, checks the foreground before every touch and restores side, height and rotation:
 - Tap: `input tap X Y` inside the frame from `dumpsys window windows | grep -A12 EdgeVolHandle`. Hold: `input swipe X Y X Y 1200`. Hold + drag in one shell so timing holds: `adb shell 'input motionevent DOWN X Y; sleep 0.8; input motionevent MOVE X1 Y1; …; input motionevent UP X1 Y1'`.
 - Check `dumpsys activity activities | grep mResumedActivity` **before every injection**: a tap lands in whatever app is in front.
 - Evidence: `adb logcat -d -v time -s EdgeVol:V vol.MiuiVolumeDialogImp-plugin:V` (`showVolumeDialogH`, `dismissH … reason:1` touch outside / `3` timeout), `dumpsys accessibility` (*Bound*/*Crashed services*), DataStore: `run-as app.edgevol xxd files/datastore/handle.preferences_pb`.
 - `am force-stop app.edgevol` clears the service from `enabled_accessibility_services` (screen shows *Off*); `am crash app.edgevol` keeps it enabled and lists it under *Crashed services* (reproduces "cleared from Recents": screen shows *Enabled but not running*).
 - `uiautomator dump` prints a harmless MIUI `theme_compatibility.xml` FileNotFoundException trace.
+- MIUI: `cmd statusbar click-tile` is accepted but never reaches the tile, so the tile is checked by hand.
+- After `am crash`, Android restarts the service after a back-off (1 s for a first crash, 11 s and longer when repeated), only if Autostart is allowed.
 
 ### Manual test checklist (M2.1: what only you can verify)
 
@@ -142,26 +148,33 @@ Never choose EdgeVol in **Developer options → Select debug app**: Android then
 
 ### Device / scenario matrix (M5)
 
-| Scenario | API 29 emu | API 34 emu | API 36 emu | Physical phone |
-|---|---|---|---|---|
-| Tap handle → system panel over YouTube / Chrome / a game | ☐ | ☐ | ☐ | ☐ (shown over home/EdgeVol/Settings by adb) |
-| Second tap within 1.8 s is swallowed (no re-show); tap after the panel timed out shows it again | ☐ | ☐ | ☐ | ☑ adb (MIUI) |
-| Does a tap on the handle close the panel on this OEM? (MIUI 12.5: **no**) | ☐ | ☐ | ☐ | ☑ adb (MIUI) |
-| Hold 500 ms → handle widens (visual + haptic) | ☐ | ☐ | ☐ | ☐ by hand |
-| Hold + drag → snaps to the nearest side at the released height (10–90% clamp); hold + release without moving does nothing | ☐ | ☐ | ☐ | ☑ adb |
-| Side + position persist across a service restart / reboot | ☐ | ☐ | ☐ | ☑ restart (adb) · ☐ reboot |
-| Gestures with **gesture nav** (no accidental back on either edge, incl. after snapping left) | ☐ | ☐ | ☐ | ☐ by hand |
-| Gestures with **3-button nav** | ☐ | ☐ | ☐ | ☐ |
-| QS tile switches the handle off and on (M3.1); long-press opens EdgeVol | ☐ | ☐ | ☐ | ☑ by hand |
-| Handle visible over the notification shade | ☐ | ☐ | ☐ | ☐ |
-| Over an app using `HIDE_OVERLAY_WINDOWS` (e.g. banking) | n/a | ☐ | ☐ | ☐ |
-| Expand system panel → ring / notification / alarm reachable | ☐ | ☐ | ☐ | ☐ |
-| Bluetooth headphones: panel shows the media stream | — | — | — | ☐ |
-| Rotation / split-screen: handle stays on its edge (either side) | ☐ | ☐ | ☐ | ☐ |
-| Reboot: handle returns without opening the app, at the saved side/height | ☐ | ☐ | ☐ | ☐ |
-| App cleared from Recents (MIUI): setup screen shows *Enabled but not running*; off/on recovers | ☐ | ☐ | ☐ | ☑ crash/force-stop (adb) · ☐ real Recents swipe |
-| Screen off/on: handle persists | ☐ | ☐ | ☐ | ☐ |
-| TalkBack: double-tap on the handle shows the panel; Move actions move and save it | ☐ | ☐ | ☐ | ☐ |
+No emulators (user decision): Robolectric covers the app logic on simulated Android 8.0 / 11 / 15, the POCO covers real behaviour on MIUI. ☑ verified · ☐ open (by hand) · — not applicable.
+
+| Scenario | Robolectric (API 26 / 30 / 35) | POCO X2 (MIUI 12.5, API 30) |
+|---|---|---|
+| Exactly one non-focusable accessibility overlay; hiding removes it | ☑ `OverlayControllerTest` | ☑ `phone-check` |
+| Tap → Android's own panel (`ADJUST_SAME` + `FLAG_SHOW_UI`) | ☑ the call | ☑ `phone-check` (over EdgeVol) · ☑ by hand in other apps |
+| Second tap within 1.8 s is swallowed | ☑ `PanelToggleTest` (JVM) | ☑ `phone-check` |
+| Does a tap on the handle close the panel? (MIUI 12.5: **no**) | — | ☑ adb |
+| Hold 500 ms → handle widens (visual + haptic) | — | ☐ by hand |
+| Hold + drag → snaps to either edge at the same height, saved | ☑ `HandleSnap` (JVM) | ☑ `phone-check` |
+| Setup-screen settings change the handle live | ☑ `SetupScreenTest` + `OverlayControllerTest` | ☑ by hand (M3) |
+| Rotation keeps the relative height; back to the same portrait spot | ☑ `OverlayControllerTest` | ☑ `phone-check` |
+| Process killed → service and handle come back by themselves (Autostart) | — | ☑ `phone-check --restart` (2 s) |
+| "Clear all" in Recents with the card locked | — | ☑ by hand (M2.2) |
+| Reboot: handle returns without opening the app, at the saved place | — | ☐ by hand (manual row 9) |
+| QS tile switches the handle off and on; long-press opens EdgeVol | ☑ `VolumeTileServiceTest` | ☑ by hand (M3.1) |
+| Tile turned on with the service off opens setup | ☑ Intent path (26 / 30) | ☐ |
+| … via `PendingIntent` (Android 14+) / Android 13+ *Add tile* prompt | — (not simulated) / ☑ button wiring | — (API 30): unverified |
+| TalkBack: double-tap shows the panel; Move actions move and save it | ☑ `OverlayControllerTest` | ☐ by hand (manual row 19) |
+| Gesture nav: no accidental Back next to the handle, on both edges | — | ☐ by hand (manual row 10) |
+| 3-button navigation | — | ☐ |
+| Handle visible over the notification shade | — | ☐ |
+| Expand the panel → ring / notification / alarm reachable | — | ☐ |
+| Bluetooth headphones: panel shows the media stream | — | ☐ |
+| Screen off/on: handle persists | — | ☐ by hand (manual row 13) |
+| Over an app using `HIDE_OVERLAY_WINDOWS` (Android 12+) | — | — (API 30) |
+| Stock Android and other brands (Pixel, Samsung, …) | API-level code paths only | unverified: needs another phone |
 
 ## Release (personal sideload)
 
@@ -176,9 +189,9 @@ Never choose EdgeVol in **Developer options → Select debug app**: Android then
 
 ## Definition of done (v1.0)
 
-- [ ] Tap → system panel works from any app on API 29/34/36 emulators and the physical phone; hold-and-drag moves the handle to either side and the position survives restarts
-- [ ] All streams reachable through the system panel
-- [ ] QS tile shows the panel (and opens setup when the service is off)
-- [ ] No `INTERNET` permission in the merged manifest (`./gradlew :app:processReleaseManifest` + inspect)
-- [ ] Unit + Compose UI tests green
-- [ ] Signed release APK installed and verified after a reboot
+- [x] Tap → system panel works from any app on the physical phone; hold-and-drag moves the handle to either side and the position survives restarts (emulators replaced by Robolectric for API 26 / 30 / 35, user decision)
+- [ ] All streams reachable through the system panel (by hand: expand the panel)
+- [x] QS tile shows and hides the handle (and opens setup when the service is off)
+- [x] No `INTERNET` permission in the merged manifest (`./gradlew :app:processReleaseManifest` + inspect)
+- [x] Unit + Compose UI tests green (223, M5)
+- [ ] Signed release APK installed and verified after a reboot (installed and verified; reboot: manual row 9)

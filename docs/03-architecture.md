@@ -344,8 +344,7 @@ phone_audio_control/
         │   │   └── ui/{setup,theme}/…
         │   └── res/{xml,drawable,mipmap-anydpi,values}/…   # values/strings_system.xml = platform strings
         ├── debug/java/app/edgevol/ui/   # @Preview composables (debug only)
-        ├── test/                   # JVM + Robolectric
-        └── androidTest/            # Compose UI + on-device
+        └── test/                   # JVM: JUnit + Robolectric (Compose UI, overlay, tile); no androidTest (no emulator)
 ```
 
 `app.edgevol` is the final application ID (user decision, M1).

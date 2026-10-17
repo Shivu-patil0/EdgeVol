@@ -4,6 +4,8 @@ kotlin = "2.4.21"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
 junit = "4.13.2"
+androidxTestExtJunit = "1.3.0"
+robolectric = "4.17"
 datastore = "1.2.1"
 
 [libraries]
@@ -15,6 +17,11 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+# Test-only (M5): JVM UI and view tests with Robolectric; never packaged in the app.
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

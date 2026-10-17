@@ -234,3 +234,25 @@ Checks: 167 tests, 0 failures; lint 0 errors / 1 warning; debug + release build;
 
 - Ruling: debug and release share the personal key — switching builds keeps the accessibility service enabled — losing the key means uninstall + redo setup, so the user should back it up.
 - Ruling: no Robolectric for a view-level TalkBack test — new dependency — the move rules are pure and unit-tested, the view glue is covered by review and manual row 19.
+
+## M5 · Test & ship ✅
+
+The user declined emulator downloads (12–15 GB) and chose Robolectric on the Mac plus scripted checks on the phone. Four test-only libraries were approved: Compose `ui-test-junit4` and `ui-test-manifest` (Compose BOM), `androidx.test.ext:junit` 1.3.0, Robolectric 4.17. None of them ship in the APK.
+
+| Change | Result |
+|---|---|
+| `SetupScreenTest` (Compose, 12 tests, API 35): every state, Xiaomi and restricted-settings cards, Show handle switch, side/size, sliders (whole percents + labels), tile card both ways, Try it | Pass |
+| `OverlayControllerTest` (12 tests × API 26 / 30 / 35): one `TYPE_ACCESSIBILITY_OVERLAY` + `FLAG_NOT_FOCUSABLE` window, idempotent apply, hide/show, live settings, rotation, TalkBack click → `showPanel()`, Move actions (labels, moves, saves, none at the ends, ignored when hidden) | Pass. This is the TalkBack check that needed no TalkBack: the same accessibility actions TalkBack calls |
+| `VolumeTileServiceTest` (8 runs): stored state rendered (subtitle 29+), tap flips and saves via the real DataStore, service off → setup opened (Intent path, 26 / 30) | Pass. The Android 14+ `PendingIntent` path isn't simulated by Robolectric |
+| Mutation check: removed `FLAG_NOT_FOCUSABLE`, disabled the tile's "open setup", forced the not-running hint | Each made the matching tests fail; code restored from git |
+| `scripts/phone-check.sh [--restart]` (sources `dev-check.sh` helpers): opens EdgeVol, foreground check before every touch, restores side / height / rotation | POCO X2, twice (user-approved): 9 PASS, 1 SKIP. Tap → panel; second tap 0.3 s later swallowed; snap left and back at 28 %, saved; landscape 28 %, same portrait frame; process 31746 killed from home → handle back in a new process after 2 s ("Scheduling restart of crashed service … 1000ms", "Start proc … for service") |
+| Tile over adb | SKIP: MIUI accepts `cmd statusbar click-tile` but it never reaches the tile; the tile stays a by-hand check |
+| Docs: test strategy, Robolectric notes, phone matrix (Robolectric vs POCO), definition of done; team rules: never `connectedDebugAndroidTest` on the phone, `phone-check.sh` needs the user's OK | Done |
+| Review (independent): the script could touch (0,0) if the handle vanished (opens the shade), ignored a `wm size` override, left rotation changed on Ctrl-C, could leave the handle hidden after a late tile click, and could count the first drag's save for the second; the tile test's "shows the stored state" was vacuous on API 26 (a new `Tile` starts active there) | All fixed: no touch without a handle window, override size used, rotation restored by a trap, handle switched back on after the tile step, save matched by side and percent, tile starts *unavailable* in the test. Re-ran: 223 tests, phone check 8 PASS / 1 SKIP |
+
+Checks: 223 tests, 0 failures (unit-test task ≈ 25 s warm, the first Robolectric run downloads ≈ 0.4 GB once); lint 0 errors / 1 warning (`OldTargetApi`); the release manifest is unchanged, and the debug one gains only the test `ComponentActivity`.
+
+- Ruling: no emulators — the user declined the download — Robolectric simulates API 26/30/35 for app logic; real OEM behaviour is only verified on the POCO, and stock Android / other brands stay unverified until another phone is available.
+- Ruling: no `connectedDebugAndroidTest` on the user's phone — it uninstalls the app afterwards — all UI tests are JVM tests.
+- Ruling: Robolectric stops at API 35 — API 36+ needs JDK 21, the toolchain is JDK 17 — `targetSdk` 36 behaviour is covered by the phone only where it applies.
+- Open (by hand, docs/06 manual checklist): reboot with the release build (row 9), TalkBack (19), gesture navigation (10), streams in the expanded panel, screen off/on (13).

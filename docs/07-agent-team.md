@@ -8,7 +8,7 @@ flowchart TD
     M -->|PLAN / REVIEW| A[analyst<br/>read-only + web]
     M -->|briefs| P[platform-dev<br/>service · overlay · gestures · SystemVolume · tile · Gradle]
     M -->|briefs| UI[ui-dev<br/>setup screen · theme · icons]
-    M -->|briefs + Build: allowed| Q[qa<br/>tests · builds · emulator]
+    M -->|briefs + Build: allowed| Q[qa<br/>tests · builds · phone checks]
     P -. "contract (docs/03)" .- UI
 ```
 
@@ -20,7 +20,7 @@ flowchart TD
 | [`analyst`](../.github/agents/analyst.agent.md) | Task briefs + acceptance criteria (PLAN); spec/bug/invariant review of diffs (REVIEW) | read, search, web | nothing (read-only) | android-permissions-security |
 | [`platform-dev`](../.github/agents/platform-dev.agent.md) | "Backend": accessibility service, handle overlay and gestures, `SystemVolume`, tile, prefs, manifest, Gradle | read, edit, search, execute | see the ownership map | android-permissions-security, android-cli |
 | [`ui-dev`](../.github/agents/ui-dev.agent.md) | "Frontend": setup/settings screen, theme, icons, debug-only `@Preview`s (`app/src/debug/java/app/edgevol/ui/**`) | read, edit, search, execute | see the ownership map | mobile-android-design, edge-to-edge, compose-animations |
-| [`qa`](../.github/agents/qa.agent.md) | Tests, the designated Gradle runner, emulator/device checks | read, edit, search, execute | `app/src/test/**`, `app/src/androidTest/**` | testing-setup, android-cli |
+| [`qa`](../.github/agents/qa.agent.md) | Tests (JUnit + Robolectric), the designated Gradle runner, phone checks | read, edit, search, execute | `app/src/test/**`, `app/src/androidTest/**` | testing-setup, android-cli |
 
 The exact path-ownership map and shared rules live in [`.github/copilot-instructions.md`](../.github/copilot-instructions.md), which every agent loads automatically.
 

@@ -75,6 +75,8 @@ install_build() {
 }
 
 find_adb || exit 1
+# Sourced (scripts/phone-check.sh): only define the helpers above.
+[ "${BASH_SOURCE[0]}" != "$0" ] && return 0
 cmd="${1:-status}"
 case "$cmd" in
   status)  ensure_device || exit 1; status ;;
