@@ -2,9 +2,7 @@ package app.edgevol.audio
 
 import android.media.AudioManager
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -31,43 +29,20 @@ class SystemVolumeTest {
     }
 
     @Test
-    fun `step up raises with default stream and FLAG_SHOW_UI and returns true`() {
-        val result = volume().step(true)
+    fun `showPanel never changes the volume`() {
+        val v = volume()
+        v.showPanel()
+        v.showPanel()
 
-        assertTrue(result)
-        assertEquals(
-            listOf(Call(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI)),
-            calls,
-        )
-    }
-
-    @Test
-    fun `step down lowers with default stream and FLAG_SHOW_UI and returns true`() {
-        val result = volume().step(false)
-
-        assertTrue(result)
-        assertEquals(
-            listOf(Call(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI)),
-            calls,
-        )
-    }
-
-    @Test
-    fun `step returns false and does not rethrow on SecurityException`() {
-        val v = volume { _, _, _ -> throw SecurityException("DND") }
-
-        assertFalse(v.step(true))
-        assertFalse(v.step(false))
         assertEquals(2, calls.size)
+        assertEquals(setOf(AudioManager.ADJUST_SAME), calls.map { it.direction }.toSet())
     }
 
     @Test
-    fun `step propagates IllegalStateException`() {
+    fun `showPanel propagates exceptions from the adjust call`() {
         val boom = IllegalStateException("boom")
-        val v = volume { _, _, _ -> throw boom }
-
         try {
-            v.step(true)
+            volume { _, _, _ -> throw boom }.showPanel()
             fail("expected IllegalStateException")
         } catch (e: IllegalStateException) {
             assertSame(boom, e)

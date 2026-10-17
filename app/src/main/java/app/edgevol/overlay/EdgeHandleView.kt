@@ -1,11 +1,13 @@
 package app.edgevol.overlay
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -13,32 +15,51 @@ import android.view.View
 import android.view.ViewConfiguration
 import app.edgevol.R
 import app.edgevol.audio.SystemVolume
+import app.edgevol.data.HandleSide
 import kotlin.math.roundToInt
 
+/** Receives the hold-and-drag reposition gesture; coordinates are raw screen pixels. */
+internal interface RepositionListener {
+    fun onBegin()
+
+    fun onMove(dxPx: Float, dyPx: Float)
+
+    /** [moved] is false when the user held and released without dragging. */
+    fun onEnd(rawX: Float, rawY: Float, moved: Boolean)
+
+    /** The gesture was cancelled by the system; restore the pre-drag placement. */
+    fun onCancel()
+}
+
 /**
- * The edge handle: a plain [View] that draws a thin pill on the screen edge and turns touches into
- * volume steps, a panel tap, or a reposition drag. Gesture maths lives in [HandleGestures].
- *
- * [onRepositionBy] receives incremental vertical movement in pixels while repositioning.
+ * The edge handle: a plain [View] that draws a thin pill on the screen edge. A tap toggles the
+ * system volume panel; holding then dragging repositions the handle. Gesture maths lives in
+ * [HandleGestures].
  */
 internal class EdgeHandleView(
     context: Context,
     private val volume: SystemVolume,
-    private val side: HandleSide,
-    private val onRepositionBy: (dyPx: Float) -> Unit,
+    private var side: HandleSide,
+    private val repositionListener: RepositionListener,
 ) : View(context) {
     private val density = context.resources.displayMetrics.density
     private val gestures = HandleGestures(
-        stepPx = HandleDefaults.STEP_DP * density,
         slopPx = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+        tapMaxTravelPx = HandleDefaults.TAP_MAX_TRAVEL_DP * density,
     )
-    private val pillWidthPx = HandleDefaults.PILL_WIDTH_DP * density
+    private val toggle = PanelToggle(SystemClock::elapsedRealtime)
     private val pillRect = RectF()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = HandleDefaults.COLOR_INDIGO }
     private val exclusionRect = Rect()
 
     private var trackedPointerId = INVALID_POINTER_ID
-    private var active = false
+
+    // True from touch-down to release: the pill is at full opacity.
+    private var held = false
+
+    // 0 = idle pill, 1 = widened pill; animated between the two.
+    private var widenFraction = 0f
+    private var widenAnimator: ValueAnimator? = null
 
     private val longPressRunnable = Runnable { handle(gestures.onLongPress()) }
 
@@ -49,13 +70,46 @@ internal class EdgeHandleView(
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
+    /** Changes the physical edge the pill hugs. */
+    fun setSide(value: HandleSide) {
+        if (side == value) return
+        side = value
+        invalidate()
+        updateGestureExclusion()
+    }
+
     override fun onDraw(canvas: Canvas) {
-        paint.alpha = if (active) 255 else (HandleDefaults.OPACITY * 255f).roundToInt()
-        val w = width.toFloat()
-        val left = if (side == HandleSide.Right) w - pillWidthPx else 0f
+        val idleAlpha = HandleDefaults.OPACITY * 255f
+        paint.alpha = if (held) 255 else (idleAlpha + (255f - idleAlpha) * widenFraction).roundToInt()
+        val pillWidthPx = lerp(HandleDefaults.PILL_WIDTH_DP, HandleDefaults.PILL_WIDTH_ACTIVE_DP) * density
+        // Hugs the edge when idle and drifts to the window centre as it widens (finger is not at the edge).
+        val edgeLeft = if (side == HandleSide.RIGHT) width - pillWidthPx else 0f
+        val centreLeft = (width - pillWidthPx) / 2f
+        val left = edgeLeft + (centreLeft - edgeLeft) * widenFraction
         pillRect.set(left, 0f, left + pillWidthPx, height.toFloat())
         val radius = pillWidthPx / 2f
         canvas.drawRoundRect(pillRect, radius, radius, paint)
+    }
+
+    private fun lerp(from: Float, to: Float): Float = from + (to - from) * widenFraction
+
+    private fun animateWiden(target: Float, durationMs: Long) {
+        widenAnimator?.cancel()
+        widenAnimator = null
+        if (widenFraction == target) return
+        if (!ValueAnimator.areAnimatorsEnabled()) {
+            widenFraction = target
+            invalidate()
+            return
+        }
+        widenAnimator = ValueAnimator.ofFloat(widenFraction, target).apply {
+            duration = durationMs
+            addUpdateListener {
+                widenFraction = it.animatedValue as Float
+                invalidate()
+            }
+            start()
+        }
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -73,15 +127,22 @@ internal class EdgeHandleView(
 
     override fun onDetachedFromWindow() {
         removeCallbacks(longPressRunnable)
-        cancelGesture()
+        widenAnimator?.cancel()
+        widenAnimator = null
+        widenFraction = 0f
+        held = false
+        trackedPointerId = INVALID_POINTER_ID
+        gestures.onCancel()
         super.onDetachedFromWindow()
     }
 
+    // Also the TalkBack / accessibility ACTION_CLICK path: no touch events, so it always shows.
     override fun performClick(): Boolean {
         super.performClick()
         performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-        Log.d(TAG, "showPanel")
+        Log.d(TAG, "tap: panel shown")
         volume.showPanel()
+        toggle.markShown()
         return true
     }
 
@@ -89,7 +150,8 @@ internal class EdgeHandleView(
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 trackedPointerId = event.getPointerId(0)
-                setActive(true)
+                toggle.onTouchDown()
+                setHeld(true)
                 handle(gestures.onDown(rawX(event, 0), rawY(event, 0)))
                 removeCallbacks(longPressRunnable)
                 postDelayed(longPressRunnable, HandleDefaults.LONG_PRESS_MS)
@@ -100,32 +162,39 @@ internal class EdgeHandleView(
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 // Other pointers are ignored; if the tracked pointer lifts, the gesture ends.
-                if (event.getPointerId(event.actionIndex) == trackedPointerId) finishGesture()
+                val index = event.actionIndex
+                if (event.getPointerId(index) == trackedPointerId) {
+                    finishGesture(rawX(event, index), rawY(event, index))
+                }
             }
-            MotionEvent.ACTION_UP -> finishGesture()
+            MotionEvent.ACTION_UP -> finishGesture(rawX(event, 0), rawY(event, 0))
             MotionEvent.ACTION_CANCEL -> cancelGesture()
         }
         return true
     }
 
-    private fun finishGesture() {
+    private fun finishGesture(rawX: Float, rawY: Float) {
         removeCallbacks(longPressRunnable)
         trackedPointerId = INVALID_POINTER_ID
-        val action = gestures.onUp()
-        setActive(false)
+        val action = gestures.onUp(rawX, rawY)
+        setHeld(false)
+        animateWiden(target = 0f, durationMs = HandleDefaults.NARROW_DURATION_MS)
         handle(action)
     }
 
     private fun cancelGesture() {
         removeCallbacks(longPressRunnable)
         trackedPointerId = INVALID_POINTER_ID
+        val wasRepositioning = gestures.state == HandleGestures.State.Repositioning
         gestures.onCancel()
-        setActive(false)
+        setHeld(false)
+        animateWiden(target = 0f, durationMs = HandleDefaults.NARROW_DURATION_MS)
+        if (wasRepositioning) repositionListener.onCancel()
     }
 
-    private fun setActive(value: Boolean) {
-        if (active != value) {
-            active = value
+    private fun setHeld(value: Boolean) {
+        if (held != value) {
+            held = value
             invalidate()
         }
     }
@@ -133,36 +202,21 @@ internal class EdgeHandleView(
     private fun handle(action: HandleAction) {
         when (action) {
             HandleAction.None -> Unit
-            HandleAction.ShowPanel -> performClick()
-            is HandleAction.Step -> performSteps(action)
+            HandleAction.ShowPanel ->
+                if (toggle.onTap()) {
+                    performClick()
+                } else {
+                    Log.d(TAG, "tap: close (not re-shown)")
+                }
             HandleAction.BeginReposition -> {
+                Log.d(TAG, "reposition begin")
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                setActive(true)
+                animateWiden(target = 1f, durationMs = HandleDefaults.WIDEN_DURATION_MS)
+                repositionListener.onBegin()
             }
-            is HandleAction.Reposition -> onRepositionBy(action.dyPx)
-        }
-    }
-
-    private fun performSteps(action: HandleAction.Step) {
-        var refused = false
-        for (i in 0 until action.count) {
-            Log.d(TAG, if (action.up) "step up" else "step down")
-            if (!volume.step(action.up)) {
-                Log.d(TAG, "step refused")
-                refused = true
-                break
-            }
-        }
-        performHapticFeedback(
-            if (Build.VERSION.SDK_INT >= 34) {
-                HapticFeedbackConstants.SEGMENT_TICK
-            } else {
-                HapticFeedbackConstants.CLOCK_TICK
-            },
-        )
-        if (refused) {
-            Log.d(TAG, "showPanel")
-            volume.showPanel()
+            is HandleAction.Reposition -> repositionListener.onMove(action.dxPx, action.dyPx)
+            is HandleAction.EndReposition ->
+                repositionListener.onEnd(action.rawX, action.rawY, action.moved)
         }
     }
 

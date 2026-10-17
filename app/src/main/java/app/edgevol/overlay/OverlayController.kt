@@ -8,6 +8,8 @@ import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import app.edgevol.audio.SystemVolume
+import app.edgevol.data.HandleSide
+import app.edgevol.data.Prefs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -15,24 +17,42 @@ import kotlin.math.roundToInt
  * Owns the one and only EdgeVol window: the edge handle. All methods must be called on the main
  * thread (accessibility service callbacks already are). [context] must be the accessibility service
  * itself: its [WindowManager] is what permits `TYPE_ACCESSIBILITY_OVERLAY`.
+ *
+ * [onPlacementChanged] is called only with the snapped placement after a completed drag.
  */
 internal class OverlayController(
     private val context: Context,
     private val volume: SystemVolume,
+    initial: Prefs,
+    private val onPlacementChanged: (Prefs) -> Unit,
 ) {
     private val windowManager: WindowManager = context.getSystemService(WindowManager::class.java)
-    private val side: HandleSide = HandleDefaults.SIDE
+    private var side: HandleSide = initial.side
+    private var positionPercent: Float = initial.positionPct.toFloat()
 
     private var view: EdgeHandleView? = null
     private var params: WindowManager.LayoutParams? = null
 
-    // In memory only (M2): lost when the service restarts.
-    private var positionPercent: Float = HandleDefaults.POSITION_PERCENT
+    // Unclamped window top-left while dragging, so the window re-syncs with the finger after
+    // an excursion past the screen edge.
+    private var dragging = false
+    private var dragX = 0f
+    private var dragY = 0f
 
-    /** Adds the handle window. Idempotent: an existing handle is removed first. */
-    fun showHandle() {
+    private val repositionListener = object : RepositionListener {
+        override fun onBegin() = beginReposition()
+
+        override fun onMove(dxPx: Float, dyPx: Float) = repositionBy(dxPx, dyPx)
+
+        override fun onEnd(rawX: Float, rawY: Float, moved: Boolean) = endReposition(rawX, moved)
+
+        override fun onCancel() = cancelReposition()
+    }
+
+    /** Adds the handle window. Idempotent: an existing handle is removed first. Returns true if added. */
+    fun showHandle(): Boolean {
         removeHandle()
-        val handleView = EdgeHandleView(context, volume, side, ::repositionBy)
+        val handleView = EdgeHandleView(context, volume, side, repositionListener)
         val layoutParams = WindowManager.LayoutParams(
             0,
             0,
@@ -43,25 +63,24 @@ internal class OverlayController(
             PixelFormat.TRANSLUCENT,
         ).apply {
             title = HandleDefaults.WINDOW_TITLE
-            gravity = Gravity.TOP or (if (side == HandleSide.Right) Gravity.RIGHT else Gravity.LEFT)
-            x = 0
         }
         applyGeometry(layoutParams)
         try {
             windowManager.addView(handleView, layoutParams)
         } catch (e: WindowManager.BadTokenException) {
             Log.w(TAG, "handle add failed: ${e.javaClass.simpleName}")
-            return
+            return false
         } catch (e: WindowManager.InvalidDisplayException) {
             Log.w(TAG, "handle add failed: ${e.javaClass.simpleName}")
-            return
+            return false
         } catch (e: IllegalStateException) {
             Log.w(TAG, "handle add failed: ${e.javaClass.simpleName}")
-            return
+            return false
         }
         view = handleView
         params = layoutParams
-        Log.d(TAG, "handle added")
+        Log.d(TAG, "handle added: side=$side pct=${positionPercent.roundToInt()}")
+        return true
     }
 
     /** Removes the handle window if there is one. Never throws. */
@@ -69,6 +88,7 @@ internal class OverlayController(
         val handleView = view ?: return
         view = null
         params = null
+        dragging = false
         try {
             windowManager.removeViewImmediate(handleView)
             Log.d(TAG, "handle removed")
@@ -79,24 +99,78 @@ internal class OverlayController(
 
     /** Recomputes size and position from the current screen (e.g. after rotation). */
     fun relayout() {
+        dragging = false
+        applyPlacement()
+    }
+
+    private fun beginReposition() {
+        val layoutParams = params ?: return
+        val screenWidth = screenWidthPx()
+        val screenHeight = screenHeightPx()
+        if (screenWidth <= 0 || screenHeight <= 0) return
+        // Switch to absolute TOP|LEFT coordinates at the handle's current top-left.
+        dragX = if (side == HandleSide.RIGHT) (screenWidth - layoutParams.width).toFloat() else 0f
+        dragY = layoutParams.y.toFloat()
+        dragging = true
+        layoutParams.gravity = Gravity.TOP or Gravity.LEFT
+        layoutParams.x = dragX.roundToInt()
+        updateLayout(layoutParams)
+    }
+
+    private fun repositionBy(dxPx: Float, dyPx: Float) {
+        if (!dragging) return
+        val layoutParams = params ?: return
+        val screenWidth = screenWidthPx()
+        val screenHeight = screenHeightPx()
+        dragX += dxPx
+        dragY += dyPx
+        layoutParams.x = dragX.roundToInt().coerceIn(0, max(0, screenWidth - layoutParams.width))
+        layoutParams.y = dragY.roundToInt().coerceIn(0, max(0, screenHeight - layoutParams.height))
+        updateLayout(layoutParams)
+    }
+
+    private fun endReposition(fingerRawX: Float, moved: Boolean) {
+        if (!dragging) return
+        val layoutParams = params ?: return
+        dragging = false
+        if (!moved) {
+            applyPlacement()
+            return
+        }
+        val screenHeight = screenHeightPx()
+        side = HandleSnap.sideFor(fingerRawX, screenWidthPx())
+        val pct = HandleSnap.positionPct(layoutParams.y + layoutParams.height / 2f, screenHeight)
+        positionPercent = pct.toFloat()
+        applyPlacement()
+        Log.d(TAG, "snap: side=$side pct=$pct")
+        onPlacementChanged(Prefs(side = side, positionPct = pct))
+    }
+
+    private fun cancelReposition() {
+        if (!dragging) return
+        dragging = false
+        applyPlacement()
+    }
+
+    /** Applies stored side and percent to the window and tells the view. */
+    private fun applyPlacement() {
         val handleView = view ?: return
         val layoutParams = params ?: return
         applyGeometry(layoutParams)
-        try {
-            windowManager.updateViewLayout(handleView, layoutParams)
-        } catch (e: IllegalArgumentException) {
-            Log.w(TAG, "handle relayout skipped: not attached")
-            return
-        }
+        if (!updateLayout(layoutParams)) return
+        handleView.setSide(side)
         handleView.updateGestureExclusion()
     }
 
-    private fun repositionBy(dyPx: Float) {
-        val height = screenHeightPx()
-        if (height <= 0) return
-        positionPercent = (positionPercent + dyPx / height * 100f)
-            .coerceIn(HandleDefaults.POSITION_MIN_PERCENT, HandleDefaults.POSITION_MAX_PERCENT)
-        relayout()
+    private fun updateLayout(layoutParams: WindowManager.LayoutParams): Boolean {
+        val handleView = view ?: return false
+        return try {
+            windowManager.updateViewLayout(handleView, layoutParams)
+            true
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "handle relayout skipped: not attached")
+            false
+        }
     }
 
     private fun applyGeometry(layoutParams: WindowManager.LayoutParams) {
@@ -106,6 +180,8 @@ internal class OverlayController(
         val screenHeight = screenHeightPx()
         layoutParams.width = widthPx
         layoutParams.height = heightPx
+        layoutParams.gravity = Gravity.TOP or (if (side == HandleSide.RIGHT) Gravity.RIGHT else Gravity.LEFT)
+        layoutParams.x = 0
         if (screenHeight <= 0) {
             layoutParams.y = 0
             return
@@ -128,14 +204,21 @@ internal class OverlayController(
         if (Build.VERSION.SDK_INT >= 30) {
             windowManager.currentWindowMetrics.bounds.height()
         } else {
-            realHeightPreR()
+            realMetricsPreR().heightPixels
+        }
+
+    private fun screenWidthPx(): Int =
+        if (Build.VERSION.SDK_INT >= 30) {
+            windowManager.currentWindowMetrics.bounds.width()
+        } else {
+            realMetricsPreR().widthPixels
         }
 
     @Suppress("DEPRECATION")
-    private fun realHeightPreR(): Int {
+    private fun realMetricsPreR(): DisplayMetrics {
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getRealMetrics(metrics)
-        return metrics.heightPixels
+        return metrics
     }
 
     private companion object {

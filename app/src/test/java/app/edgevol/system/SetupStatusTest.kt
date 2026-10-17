@@ -36,4 +36,31 @@ class SetupStatusTest {
         assertFalse(SetupStatus(true).showRestrictedSettingsHelp)
         assertFalse(SetupStatus(false).showRestrictedSettingsHelp)
     }
+
+    @Test
+    fun `SetupStatus with only serviceEnabled has serviceRunning false and no restricted help`() {
+        val status = SetupStatus(serviceEnabled = true)
+        assertTrue(status.serviceEnabled)
+        assertFalse(status.serviceRunning)
+        assertFalse(status.showRestrictedSettingsHelp)
+    }
+
+    @Test
+    fun `SetupStatus defaults serviceRunning to false for both enabled values`() {
+        assertFalse(SetupStatus(true).serviceRunning)
+        assertFalse(SetupStatus(false).serviceRunning)
+    }
+
+    @Test
+    fun `SetupStatus carries serviceRunning independently of the other fields`() {
+        val running = SetupStatus(serviceEnabled = true, serviceRunning = true)
+        assertTrue(running.serviceRunning)
+        assertFalse(running.showRestrictedSettingsHelp)
+
+        val both = SetupStatus(serviceEnabled = true, showRestrictedSettingsHelp = true, serviceRunning = true)
+        assertTrue(both.serviceRunning)
+        assertTrue(both.showRestrictedSettingsHelp)
+
+        assertTrue(SetupStatus(false, serviceRunning = true).serviceRunning)
+    }
 }

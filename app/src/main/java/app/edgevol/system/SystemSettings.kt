@@ -19,6 +19,7 @@ object SystemSettings {
         return SetupStatus(
             serviceEnabled = enabled,
             showRestrictedSettingsHelp = shouldShowRestrictedSettingsHelp(Build.VERSION.SDK_INT),
+            serviceRunning = VolumeAccessibilityService.isRunning,
         )
     }
 
