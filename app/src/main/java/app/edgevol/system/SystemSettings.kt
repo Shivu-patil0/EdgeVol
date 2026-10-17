@@ -3,6 +3,7 @@ package app.edgevol.system
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import app.edgevol.service.VolumeAccessibilityService
 
@@ -15,7 +16,10 @@ object SystemSettings {
             )
             isServiceEnabled(value, context.packageName, VolumeAccessibilityService::class.java.name)
         }.getOrDefault(false)
-        return SetupStatus(serviceEnabled = enabled)
+        return SetupStatus(
+            serviceEnabled = enabled,
+            showRestrictedSettingsHelp = shouldShowRestrictedSettingsHelp(Build.VERSION.SDK_INT),
+        )
     }
 
     fun accessibilitySettingsIntent(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
