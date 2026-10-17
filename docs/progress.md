@@ -256,3 +256,11 @@ Checks: 223 tests, 0 failures (unit-test task ≈ 25 s warm, the first Robolectr
 - Ruling: no `connectedDebugAndroidTest` on the user's phone — it uninstalls the app afterwards — all UI tests are JVM tests.
 - Ruling: Robolectric stops at API 35 — API 36+ needs JDK 21, the toolchain is JDK 17 — `targetSdk` 36 behaviour is covered by the phone only where it applies.
 - Open (by hand, docs/06 manual checklist): reboot with the release build (row 9), TalkBack (19), gesture navigation (10), streams in the expanded panel, screen off/on (13).
+
+## Release 1.0.0
+
+- Final cross-cutting review (lifecycle, security/privacy, API gating, R8, repo contents): no blockers.
+- `versionName` 1.0.0 / `versionCode` 2; installed on the POCO X2 over the previous build, service rebound by itself.
+- Root `README.md` added for GitHub.
+- History rewritten before the first push (user decision): all commits authored with Shivu-patil0's GitHub noreply address, and an old local JDK path removed from docs/06. A bundle of the old history is kept outside the repo (`~/.android/edgevol/history-backup-before-rewrite.bundle`).
+- Pushed to a private GitHub repo under Shivu-patil0.
