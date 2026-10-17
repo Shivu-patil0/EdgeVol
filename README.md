@@ -53,3 +53,7 @@ Kotlin · Jetpack Compose (setup screen only) · AccessibilityService overlay ·
 The specs are the source of truth: [docs/](docs/README.md) has the competitor research, feasibility, architecture, UI design, onboarding, build/test/release and the progress log per milestone.
 
 Tested on a POCO X2 (MIUI 12.5, Android 11). Other brands and stock Android haven't been tried on a real device yet.
+
+## License
+
+[MIT](LICENSE) © 2026 Shivanand Patil. The agent skills copied into `.agents/skills/` keep their own licenses (a `LICENSE.txt` in each folder: Apache-2.0 or MIT).
