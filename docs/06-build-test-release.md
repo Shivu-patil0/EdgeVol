@@ -164,9 +164,13 @@ Never choose EdgeVol in **Developer options → Select debug app**: Android then
 
 ## Release (personal sideload)
 
-- **Signing:** a keystore kept **outside the repo**. `keystore.properties` (git-ignored) is read by `app/build.gradle.kts`.
-- **R8** enabled for release (`isMinifyEnabled = true`, `isShrinkResources = true`). The accessibility and tile services are referenced from the manifest, so R8 keeps them automatically.
-- `./gradlew assembleRelease`, then `adb install -r app/build/outputs/apk/release/app-release.apk`.
+**Size:** the release APK is **≈ 1.2 MB** (≈ 1.7 MB of code after R8). The debug APK is ≈ 12.5 MB because it ships every library un-shrunk (≈ 30 MB of uncompressed dex) plus the debug-only Compose preview tooling; it's a development build, not the one to keep on the phone.
+
+- **Signing key (created 2026-10-17):** `~/.android/edgevol/edgevol-release.jks` (PKCS12, RSA 4096, alias `edgevol`, valid 100 years) with its passwords in `~/.android/edgevol/release.properties` (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`). Both are `chmod 600` in a `700` folder **outside the repo** and never committed. `app/build.gradle.kts` reads `keystore.properties` at the repo root if present (git-ignored), otherwise that file. Without either, release builds are unsigned and debug builds use the default debug key.
+- **Back the key up** (both files, e.g. in a password manager). Android only installs an update signed with the same key; losing it means uninstalling EdgeVol, which switches the accessibility service off and resets its settings, Autostart and the Recents lock.
+- **Debug and release use the same key**, so `scripts/dev-check.sh install` (debug) and `scripts/dev-check.sh release` replace each other with `adb install -r` and the service stays enabled.
+- **R8** enabled for release (`isMinifyEnabled = true`, `isShrinkResources = true`). The accessibility and tile services are referenced from the manifest, so R8 keeps them automatically. Verified on the POCO X2: service, handle, tap, hold-drag-snap, saving, live settings, tile, and a restart after a kill all work in the release build; no extra keep rules were needed.
+- Build and install: `scripts/dev-check.sh release` (or `./gradlew assembleRelease` + `adb install -r app/build/outputs/apk/release/app-release.apk`).
 - Version: `versionCode` increments per build; `versionName` follows semver.
 
 ## Definition of done (v1.0)

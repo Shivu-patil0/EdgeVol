@@ -3,6 +3,7 @@
 #
 #   scripts/dev-check.sh            status: device, service, handle window, recent logs
 #   scripts/dev-check.sh install    build the debug APK, install it, then status
+#   scripts/dev-check.sh release    build the signed release APK (R8, ~1 MB), install it, then status
 #   scripts/dev-check.sh logs       only the recent filtered logs
 #
 # Only EdgeVol and volume-panel log lines are read; it takes no screenshots and sends no input.
@@ -59,14 +60,17 @@ logs() {
   "$ADB" logcat -d -v time 2>/dev/null | grep -E "D/EdgeVol|MiuiVolumeDialogImp-plugin.*(onShowRequested|Final dismiss|dismissH mShowing:true)" | tail -n 15 | cut -c1-170
 }
 
-install_debug() {
+install_build() {
+  local variant="$1" apk="$2"
   if [ -z "${JAVA_HOME:-}" ]; then
     JAVA_HOME="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
     [ -n "$JAVA_HOME" ] || { echo "Set JAVA_HOME to a JDK 17 first." >&2; return 1; }
     export JAVA_HOME
   fi
-  ( cd "$ROOT" && ./gradlew --console=plain -q assembleDebug ) || return 1
-  "$ADB" install -r "$ROOT/app/build/outputs/apk/debug/app-debug.apk" || return 1
+  ( cd "$ROOT" && ./gradlew --console=plain -q "assemble$variant" ) || return 1
+  [ -f "$apk" ] || { echo "No signed APK at $apk (release needs the signing key, docs/06)." >&2; return 1; }
+  echo "installing $(basename "$apk") ($(( $(wc -c < "$apk") / 1024 )) KB)"
+  "$ADB" install -r "$apk" || return 1
   sleep 3
 }
 
@@ -74,7 +78,8 @@ find_adb || exit 1
 cmd="${1:-status}"
 case "$cmd" in
   status)  ensure_device || exit 1; status ;;
-  install) ensure_device || exit 1; install_debug || exit 1; status ;;
+  install) ensure_device || exit 1; install_build Debug "$ROOT/app/build/outputs/apk/debug/app-debug.apk" || exit 1; status ;;
+  release) ensure_device || exit 1; install_build Release "$ROOT/app/build/outputs/apk/release/app-release.apk" || exit 1; status ;;
   logs)    ensure_device || exit 1; logs ;;
-  *) echo "usage: $0 [status|install|logs]" >&2; exit 2 ;;
+  *) echo "usage: $0 [status|install|release|logs]" >&2; exit 2 ;;
 esac

@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
+
+// Personal signing key, kept outside the repo (docs/06 § Release). Without it, release builds are
+// unsigned and debug builds use the default debug key.
+val signingProperties: Properties? = listOf(
+    rootProject.file("keystore.properties"),
+    File(System.getProperty("user.home"), ".android/edgevol/release.properties"),
+).firstOrNull { it.isFile }?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
 
 android {
     namespace = "app.edgevol"
@@ -16,7 +25,24 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (signingProperties != null) {
+            create("personal") {
+                storeFile = file(signingProperties.getProperty("storeFile"))
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        // Same key for both, so a debug build can replace the release build (and back) without an
+        // uninstall, which would switch the accessibility service off.
+        val personal = signingConfigs.findByName("personal")
+        debug {
+            if (personal != null) signingConfig = personal
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -24,6 +50,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (personal != null) signingConfig = personal
         }
     }
 
