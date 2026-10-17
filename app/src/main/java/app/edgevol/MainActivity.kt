@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import app.edgevol.audio.SystemVolume
 import app.edgevol.system.SetupStatus
 import app.edgevol.system.SystemSettings
 import app.edgevol.ui.setup.SetupScreen
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         status = SystemSettings.status(this)
+        val volume = SystemVolume(applicationContext)
         setContent {
             EdgeVolTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity() {
                         status = status,
                         onEnableService = { launchSafely(SystemSettings.accessibilitySettingsIntent()) },
                         onOpenAppInfo = { launchSafely(SystemSettings.appDetailsIntent(this@MainActivity)) },
+                        onTestPanel = { volume.showPanel() },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }

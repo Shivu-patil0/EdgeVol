@@ -43,6 +43,7 @@ fun SetupScreen(
     status: SetupStatus,
     onEnableService: () -> Unit,
     onOpenAppInfo: () -> Unit,
+    onTestPanel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -72,11 +73,13 @@ fun SetupScreen(
                     style = MaterialTheme.typography.bodyLarge,
                 )
             } else {
-                ServiceOffContent(
-                    onEnableService = onEnableService,
-                    onOpenAppInfo = onOpenAppInfo,
-                )
+                ServiceOffContent(onEnableService = onEnableService)
+                if (status.showRestrictedSettingsHelp) {
+                    RestrictedSettingsCard(onOpenAppInfo = onOpenAppInfo)
+                }
             }
+
+            TryItCard(onTestPanel = onTestPanel)
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -127,7 +130,6 @@ private fun StatusCard(enabled: Boolean) {
 @Composable
 private fun ServiceOffContent(
     onEnableService: () -> Unit,
-    onOpenAppInfo: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
@@ -150,33 +152,64 @@ private fun ServiceOffContent(
                 style = MaterialTheme.typography.titleMedium,
             )
         }
+    }
+}
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+@Composable
+private fun RestrictedSettingsCard(onOpenAppInfo: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.setup_restricted_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                text = stringResource(R.string.setup_restricted_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = stringResource(R.string.setup_restricted_steps),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            OutlinedButton(
+                onClick = onOpenAppInfo,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.setup_restricted_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() },
-                )
-                Text(
-                    text = stringResource(R.string.setup_restricted_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = stringResource(R.string.setup_restricted_steps),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                OutlinedButton(
-                    onClick = onOpenAppInfo,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text(text = stringResource(R.string.setup_open_app_info_button))
-                }
+                Text(text = stringResource(R.string.setup_open_app_info_button))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TryItCard(onTestPanel: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.setup_try_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                text = stringResource(R.string.setup_try_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            OutlinedButton(
+                onClick = onTestPanel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                Text(text = stringResource(R.string.setup_try_button))
             }
         }
     }
