@@ -110,6 +110,30 @@ With MIUI *USB debugging (Security settings)* on, `adb shell input tap|swipe|mot
 - `am force-stop app.edgevol` clears the service from `enabled_accessibility_services` (screen shows *Off*); `am crash app.edgevol` keeps it enabled and lists it under *Crashed services* (reproduces "cleared from Recents": screen shows *Enabled but not running*).
 - `uiautomator dump` prints a harmless MIUI `theme_compatibility.xml` FileNotFoundException trace.
 
+### Manual test checklist (M2.1: what only you can verify)
+
+Run on your phone with the service on. Tick or write a few words per row; anything that fails goes to the fast lane. `scripts/dev-check.sh` afterwards shows the service state, the handle frame and the logs.
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | Look at the right edge, a little above the middle | A thin faint bar |
+| 2 | Tap it | Android's volume panel shows, with a click. A quick second tap does nothing extra; the panel hides itself after 2 s (MIUI) |
+| 3 | Tap **Show volume panel** in the app | The same panel |
+| 4 | Hold about 0.5 s without moving, then release | A buzz, the bar widens to a solid pill, and on release nothing changes |
+| 5 | Hold, drag into the **left half**, release | The handle snaps to the left edge at the height you released |
+| 6 | Hold, drag to the very top and the very bottom | It stops near the ends (about 10% / 90%) |
+| 7 | Hold, drag back into the right half | It snaps back to the right edge |
+| 8 | Switch EdgeVol off and on in Accessibility settings | The handle returns at the saved side and height |
+| 9 | Reboot, unlock, wait about 30 s | The handle returns by itself at the same spot |
+| 10 | Gesture navigation: swipe in from the screen edge right beside the handle, on both sides | No accidental Back |
+| 11 | Open other apps, a full-screen video, the notification shade | The handle is visible and works, and touches next to it reach the app |
+| 12 | Rotate to landscape and back, with the handle on each side | It stays on its edge at a sensible height |
+| 13 | Turn the screen off and on | The handle still works |
+| 14 | Swipe EdgeVol away from Recents, then open the app | "On, but not running" with a button. Use it, switch EdgeVol off and on (twice if needed), and the handle returns at its saved spot |
+| 15 | Optional: lock EdgeVol in Recents, allow Autostart, set battery to "No restrictions", repeat 14 | Shows whether MIUI then keeps the service alive |
+| 16 | Optional, TalkBack: focus the handle and double-tap | The panel shows |
+| 17 | Optional: setup screen at 200% font size | Nothing clipped |
+
 ### Device / scenario matrix (M5)
 
 | Scenario | API 29 emu | API 34 emu | API 36 emu | Physical phone |
