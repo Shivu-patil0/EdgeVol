@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EdgeVol</string>
+
+    <string name="setup_title">EdgeVol setup</string>
+
+    <string name="setup_status_on">Accessibility service: On</string>
+    <string name="setup_status_off">Accessibility service: Off</string>
+
+    <string name="setup_ready_message">Ready. Tap the handle on the screen edge to see your phone\'s own volume panel, or drag along it to change volume, in any app.</string>
+
+    <string name="setup_disclosure_title">Why EdgeVol needs this</string>
+    <string name="setup_disclosure_body">EdgeVol uses Android\'s Accessibility service only to keep its small volume handle on the screen edge above other apps. It does not read, collect or transmit anything on your screen, has no internet access, and performs only one system action: closing the notification shade when you use the Quick Settings tile.</string>
+    <string name="setup_enable_button">Enable</string>
+
+    <string name="setup_restricted_title">Toggle greyed out?</string>
+    <string name="setup_restricted_body">On Android 13 and later, apps installed outside an app store can\'t use Accessibility until you allow restricted settings. If the EdgeVol switch is greyed out, follow these steps, then come back and tap Enable.</string>
+    <string name="setup_restricted_steps">App info → ⋮ → Allow restricted settings</string>
+    <string name="setup_open_app_info_button">Open app info</string>
+
+    <string name="setup_error_settings_unavailable">Couldn\'t open Settings on this device.</string>
+</resources>
