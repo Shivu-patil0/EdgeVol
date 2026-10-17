@@ -127,12 +127,15 @@ Run on your phone with the service on. Tick or write a few words per row; anythi
 | 9 | Reboot, unlock, wait about 30 s | The handle returns by itself at the same spot |
 | 10 | Gesture navigation: swipe in from the screen edge right beside the handle, on both sides | No accidental Back |
 | 11 | Open other apps, a full-screen video, the notification shade | The handle is visible and works, and touches next to it reach the app |
-| 12 | Rotate to landscape and back, with the handle on each side | It stays on its edge at a sensible height |
+| 12 | Rotate to landscape and back, with the handle near the top and then near the bottom | It keeps the same relative height (top stays top) and returns to the exact spot in portrait |
 | 13 | Turn the screen off and on | The handle still works |
-| 14 | Swipe EdgeVol away from Recents, then open the app | "On, but not running" with a button. Use it, switch EdgeVol off and on (twice if needed), and the handle returns at its saved spot |
-| 15 | Optional: lock EdgeVol in Recents, allow Autostart, set battery to "No restrictions", repeat 14 | Shows whether MIUI then keeps the service alive |
-| 16 | Optional, TalkBack: focus the handle and double-tap | The panel shows |
-| 17 | Optional: setup screen at 200% font size | Nothing clipped |
+| 14 | Xiaomi only: tap **Open Autostart settings** in the app, switch EdgeVol on, come back | The Autostart list opens; Back returns to EdgeVol |
+| 15 | Xiaomi only: open Recents, long-press the EdgeVol card, tap the lock | The card shows a lock |
+| 16 | Tap "clear all" in Recents | The handle stays (locked). Unlocked but with Autostart: it comes back within about a minute, or at once when you open EdgeVol |
+| 17 | Optional, TalkBack: focus the handle and double-tap | The panel shows |
+| 18 | Optional: setup screen at 200% font size | Nothing clipped |
+
+Never choose EdgeVol in **Developer options → Select debug app**: Android then force-stops it whenever it leaves Recents.
 
 ### Device / scenario matrix (M5)
 

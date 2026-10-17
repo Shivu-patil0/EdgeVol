@@ -217,7 +217,11 @@ The M3 tile will reach the service through the same kind of process-wide state (
 
 ### Why `isRunning` exists (verified on the POCO X2)
 
-When the app process is killed on MIUI (e.g. the user clears the app from Recents, or `am crash`), Android puts the accessibility service in *Crashed services* and does **not** re-bind it until the user switches it off and on again, while `Settings.Secure.enabled_accessibility_services` still lists it. `enabled_accessibility_services` alone therefore says "on" with no handle. `SetupStatus.serviceRunning` (= `isRunning`) tells the setup screen the truth: a new process starts with `false` and only a real `onServiceConnected()` + added handle sets it. After `am force-stop` the *setting itself* is cleared, so the screen shows Off. A single off/on cycle in Settings does not always recover the service after a crash (the first `addView` can throw `BadTokenException`; a second cycle works); a bounded retry (4 attempts over ≈ 4.4 s, fresh `WindowManager` each time) was tried and **did not help**, so it was not kept.
+When the app process is killed on MIUI (e.g. "clear all" in Recents, or `am crash`), Android puts the accessibility service in *Crashed services* while `Settings.Secure.enabled_accessibility_services` still lists it; it is re-bound only when the restart is allowed (MIUI: Autostart, see [05](05-onboarding-and-permissions.md#service-enabled-but-not-running-miui-and-similar)). `enabled_accessibility_services` alone therefore says "on" with no handle. `SetupStatus.serviceRunning` (= `isRunning`) tells the setup screen the truth: a new process starts with `false` and only a real `onServiceConnected()` + added handle sets it. After `am force-stop` the *setting itself* is cleared, so the screen shows Off. A single off/on cycle in Settings does not always recover the service after a crash (the first `addView` can throw `BadTokenException`; a second cycle works); a bounded retry (4 attempts over ≈ 4.4 s, fresh `WindowManager` each time) was tried and **did not help**, so it was not kept.
+
+### Rotation (M2.2)
+
+The handle's vertical position is a percent of the full display height for the current orientation, so it keeps the same relative height in portrait and landscape. `currentWindowMetrics` read from the service context inside `onConfigurationChanged` can still describe the previous rotation, so the size used is the display's long and short sides mapped to the orientation from the `Configuration` (`HandleSnap.orientedSize`); `HandleSnap.windowTopPx` then places the window. The stored percent changes only after a drag, never on layout, so rotating back and forth returns to the same spot. Verified on the POCO X2: 10 % → y 141–339 px in portrait, 9–207 px in landscape.
 
 ## UI ↔ platform contract
 
@@ -260,15 +264,17 @@ enum class HandleSize { S, M, L }
 //   Prefs gains: val size: HandleSize = HandleSize.M, val opacityPct: Int = 35   // 0 = tile-only mode
 
 package app.edgevol.system
-data class SetupStatus(                                          // M1; M2 adds the second field, M2.1 the third
+data class SetupStatus(                                          // M1; M2 adds the second field, M2.1 the third, M2.2 the fourth
     val serviceEnabled: Boolean,
     val showRestrictedSettingsHelp: Boolean = false,             // M2: true on API 33+ (platform decides)
     val serviceRunning: Boolean = false,                         // M2.1: the service is connected in this process
+    val showAutostartHelp: Boolean = false,                      // M2.2: Xiaomi/Redmi/POCO (Build.MANUFACTURER/BRAND)
 )
 object SystemSettings {
     fun status(context: Context): SetupStatus                    // M1
     fun accessibilitySettingsIntent(): Intent                    // M1
     fun appDetailsIntent(context: Context): Intent               // M1
+    fun autostartSettingsIntent(): Intent                        // M2.2: MIUI Autostart list; caller falls back to appDetailsIntent
     fun requestAddTile(context: Context)         // M3: API 33+, no-op below
 }
 ```
@@ -289,13 +295,15 @@ package app.edgevol.ui.setup
     onOpenAppInfo: () -> Unit,                   // M1
     onAddTile: () -> Unit,                       // M3
     onTestPanel: () -> Unit,                     // M2: calls SystemVolume.showPanel()
+    onOpenAutostart: () -> Unit,                 // M2.2: MIUI Autostart list, fallback App info
     onPrefsChange: ((Prefs) -> Prefs) -> Unit,   // M3
     modifier: Modifier = Modifier,               // M1
 )
 ```
 
 M1 form: `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`.
-M2 form (unchanged in M2.1): `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, modifier)`. **Three states (M2.1):** *Off* (disclosure + Enable; the restricted-settings card only when `showRestrictedSettingsHelp`), *Enabled but not running* (plain-language explanation, button to Accessibility settings, a "switch off and on once more" line and a Xiaomi/MIUI hint shown on every phone) and *Running* (ready text). The screen never claims the handle exists unless `serviceRunning`. The *Try it* card shows in all states. `MainActivity` refreshes the status in `onResume` and once more after 1.5 s, because a healthy service in a fresh process connects slightly after the activity. `@Preview`s live in `app/src/debug/java/app/edgevol/ui/` (`ui-tooling` and `ui-tooling-preview` are `debugImplementation`).
+M2.2 form: `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, onOpenAutostart, modifier)`; the *Keep EdgeVol running* (Autostart) card shows in the *Running* and *Enabled but not running* states when `showAutostartHelp`, and the generic restriction hint shows only when it doesn't.
+M2 form (unchanged in M2.1): `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, modifier)`. **Three states (M2.1):** *Off* (disclosure + Enable; the restricted-settings card only when `showRestrictedSettingsHelp`), *Enabled but not running* (plain-language explanation, button to Accessibility settings, a "switch off and on once more" line and a Xiaomi/MIUI hint shown on every phone) and *Running* (ready text). The screen never claims the handle exists unless `serviceRunning`. The *Try it* card shows in all states. `MainActivity` refreshes the status in `onResume` and once more after 1.5 s, because a healthy service in a fresh process connects slightly after the activity. `@Preview`s live in `app/src/debug/java/app/edgevol/ui/` (`ui-tooling` and `ui-tooling-preview` are `debugImplementation`). `MainActivity` stays in Recents so MIUI users can lock it (M2.2).
 
 ## Planned repository layout
 

@@ -44,6 +44,7 @@ fun SetupScreen(
     onEnableService: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onTestPanel: () -> Unit,
+    onOpenAutostart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -69,11 +70,18 @@ fun SetupScreen(
             StatusCard(state = state)
 
             when (state) {
-                SetupState.Running -> Text(
-                    text = stringResource(R.string.setup_ready_message),
-                    style = MaterialTheme.typography.bodyLarge,
+                SetupState.Running -> {
+                    Text(
+                        text = stringResource(R.string.setup_ready_message),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    if (status.showAutostartHelp) AutostartCard(onOpenAutostart = onOpenAutostart)
+                }
+                SetupState.EnabledNotRunning -> NotRunningContent(
+                    showAutostartHelp = status.showAutostartHelp,
+                    onOpenAutostart = onOpenAutostart,
+                    onOpenSettings = onEnableService,
                 )
-                SetupState.EnabledNotRunning -> NotRunningContent(onOpenSettings = onEnableService)
                 SetupState.Off -> {
                     ServiceOffContent(onEnableService = onEnableService)
                     if (status.showRestrictedSettingsHelp) {
@@ -140,12 +148,17 @@ private fun StatusCard(state: SetupState) {
 }
 
 @Composable
-private fun NotRunningContent(onOpenSettings: () -> Unit) {
+private fun NotRunningContent(
+    showAutostartHelp: Boolean,
+    onOpenAutostart: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
             text = stringResource(R.string.setup_not_running_body),
             style = MaterialTheme.typography.bodyLarge,
         )
+        if (showAutostartHelp) AutostartCard(onOpenAutostart = onOpenAutostart)
         Button(
             onClick = onOpenSettings,
             modifier = Modifier
@@ -162,11 +175,41 @@ private fun NotRunningContent(onOpenSettings: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = stringResource(R.string.setup_not_running_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!showAutostartHelp) {
+            Text(
+                text = stringResource(R.string.setup_not_running_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AutostartCard(onOpenAutostart: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.setup_autostart_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                text = stringResource(R.string.setup_autostart_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            OutlinedButton(
+                onClick = onOpenAutostart,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                Text(text = stringResource(R.string.setup_autostart_button))
+            }
+        }
     }
 }
 

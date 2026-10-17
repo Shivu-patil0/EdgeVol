@@ -106,7 +106,7 @@ Verification: `JAVA_HOME=<JDK 17> ./gradlew testDebugUnitTest lintDebug assemble
 - Ruling: no separate final full-diff review after the build (waves A and B were each reviewed by the analyst; later changes were one import fix and two small review fixes, read by the manager) — the user's manual run is the real gate — a missed bug would show in the manual script.
 - Note: landscape cutout handling (`layoutInDisplayCutoutMode` not set), rotation timing of `currentWindowMetrics` in `onConfigurationChanged`, and whether MIUI honours gesture-exclusion rects for an accessibility overlay are unverified until the user's script steps 12 and 14.
 
-## M2.1 · Handle rework ⏳ (built; gestures verified over adb on the phone; feel, rotation, reboot and a real Recents swipe await the user)
+## M2.1 · Handle rework ✅ (built and checked on the phone; rotation and Recents survival fixed in M2.2)
 
 Change set approved verbatim by the user (Gate 1 pre-approved). Base `cf8ddf8`. Waves: A platform (build), B platform ∥ UI (no build), C qa (build + device). Analyst reviews after waves A and B and a final whole-diff review.
 
@@ -149,3 +149,28 @@ Change set approved verbatim by the user (Gate 1 pre-approved). Base `cf8ddf8`. 
 - Note: process slip by the manager — a probe `input tap` was sent to the phone while the user's Play Store was in front (the brief said "no-op tap"); the effect is unknown (no state of the other app was read). One docs file was also edited via a Python script instead of the edit tool; the content is the same and was reviewed in the diff.
 - Note: the handle window object was recreated once during an unrelated background dexopt without a log line (qa could not reproduce it); low priority.
 - Note: rotation mid-drag drops the rest of that drag (`relayout()` clears the drag state); landscape cutout handling is still untested.
+
+## M2.2 · Survival and rotation ✅
+
+Done directly (no agent team, at the user's request for speed), from the user's phone report: the handle disappeared after clearing EdgeVol from Recents, after an app switch and "after restart", and sat too low in landscape.
+
+**Root causes (from the phone's own logs, POCO X2 / MIUI 12.5):**
+- All 7 kills since boot were `Force stopping app.edgevol … : set debug app`: EdgeVol had been chosen in *Developer options → Select debug app* (Settings `AppPicker` at 13:50:30; it was also set earlier and cleared once). With that set, every Recents swipe force-stopped it, and a force-stopped accessibility service stays dead until re-toggled. Reboot itself worked: the service started at the first unlock.
+- After clearing the debug app, **"clear all"** still killed the process (`ProcessManager: OneKeyClean`), and MIUI blocked the restart Android scheduled (`AutoStartManagerService: Reject RestartService`) because Autostart was denied (`appops MIUIOP(10008): ignore`).
+- Rotation: `currentWindowMetrics` from the service context still reported the portrait size in `onConfigurationChanged`, so 40 % of 2400 px landed near the bottom of the 1080 px-high landscape screen; the stored percent was also rewritten on every layout.
+
+| Change | Result | Commit |
+|---|---|---|
+| Handle size from orientation + display long/short sides (`HandleSnap.orientedSize`, `windowTopPx`); stored percent changes only after a drag | Portrait 10 % = y 141–339 px, landscape 9–207 px, back = same; 18 % likewise | `8770b8c` |
+| ~~`MainActivity` `excludeFromRecents`~~ reverted | The swipe force-stops were the debug-app setting, not MIUI; the Recents card is needed to **lock** EdgeVol | `8770b8c`, reverted below |
+| One-time *Keep EdgeVol running* card on Xiaomi/Redmi/POCO (Running and Not-running states), button opens MIUI's Autostart list (fallback App info); new `SetupStatus.showAutostartHelp`, `SystemSettings.autostartSettingsIntent()`, `SetupScreen(onOpenAutostart)` | Card renders; the button opens `AutoStartManagementActivity` from the app; Back returns | see below |
+
+**Verified on the phone:** with Autostart allowed, after "clear all" Android scheduled the restart (≈ 31 s, then ≈ 124 s after a second clear within 10 s) and the handle came back by itself at the saved spot (14:16:27); opening EdgeVol brings it back immediately. `debug_app` cleared (with the user's OK). Checks: `testDebugUnitTest lintDebug assembleDebug :app:processReleaseManifest assembleRelease` PASS, **146 tests, 0 failures**, lint 0 errors / 9 warnings (unchanged).
+
+- Ruling: Autostart state can't be read reliably (MIUI app-op 10008 is private), so the card always shows on Xiaomi-family phones with "Already done? You can ignore this." — a small permanent card for users who already allowed it.
+- Ruling: the generic "lock in Recents / battery" hint is replaced by the Autostart card on Xiaomi-family phones and a short generic restriction hint elsewhere — locking in Recents is moot now that there is no card; battery "No restrictions" was not needed in the verified case.
+- Ruling: the explicit MIUI component is not public API; a failed launch (`ActivityNotFoundException` / `SecurityException`) falls back to App info — on other MIUI/HyperOS versions the user may need one more tap.
+- Note: the restart delay after "clear all" is Android's crash back-off (≈ 30 s first, longer when repeated) and can't be shortened by the app.
+- Verified (14:3x): with Autostart alone, "clear all" kills EdgeVol and it comes back only after the back-off (51 s, then 204 s when cleared again within a minute) or when the app is opened — the user found that too slow. After **locking the EdgeVol card in Recents** (`settings get system locked_apps` → `app.edgevol`), "clear all" killed 27 other processes and **not** EdgeVol; the handle stayed. So the Xiaomi card asks for two one-time steps: Autostart + lock. `excludeFromRecents` was reverted because locking needs the card.
+- Ruling: no foreground service / persistent notification as an alternative to locking — it breaks the "no foreground service" invariant, adds a permanent notification, and whether MIUI's "clear all" spares unlocked foreground-service apps is **unverified** here — revisit only if locking proves unacceptable.
+- Note: an independent code review of the rotation and Autostart changes found no issues.

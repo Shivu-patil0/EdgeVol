@@ -63,4 +63,28 @@ class SetupStatusTest {
 
         assertTrue(SetupStatus(false, serviceRunning = true).serviceRunning)
     }
+
+    @Test
+    fun `Xiaomi family is detected from the manufacturer or the brand`() {
+        assertTrue(isXiaomiFamily("Xiaomi", "POCO"))
+        assertTrue(isXiaomiFamily("Xiaomi", "Redmi"))
+        assertTrue(isXiaomiFamily("xiaomi", "xiaomi"))
+        assertTrue(isXiaomiFamily("", "poco"))
+        assertTrue(isXiaomiFamily(" Redmi ", ""))
+    }
+
+    @Test
+    fun `other phones are not Xiaomi family`() {
+        assertFalse(isXiaomiFamily("samsung", "samsung"))
+        assertFalse(isXiaomiFamily("Google", "google"))
+        assertFalse(isXiaomiFamily("OnePlus", "OnePlus"))
+        assertFalse(isXiaomiFamily("", ""))
+        assertFalse(isXiaomiFamily("Xiaomi-like", "Pocophone-ish"))
+    }
+
+    @Test
+    fun `SetupStatus defaults showAutostartHelp to false`() {
+        assertFalse(SetupStatus(true).showAutostartHelp)
+        assertFalse(SetupStatus(true, serviceRunning = true).showAutostartHelp)
+    }
 }

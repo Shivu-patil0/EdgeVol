@@ -15,6 +15,7 @@ private fun PreviewSetup(status: SetupStatus) {
             onEnableService = {},
             onOpenAppInfo = {},
             onTestPanel = {},
+            onOpenAutostart = {},
         )
     }
 }
@@ -71,4 +72,16 @@ private fun SetupScreenDarkPreview() {
 @Composable
 private fun SetupScreenLargeFontPreview() {
     PreviewSetup(SetupStatus(serviceEnabled = false, showRestrictedSettingsHelp = true))
+}
+
+@Preview(name = "Running on Xiaomi (Autostart card)", showBackground = true, heightDp = 1000)
+@Composable
+private fun SetupScreenRunningXiaomiPreview() {
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = true, showAutostartHelp = true))
+}
+
+@Preview(name = "Not running on Xiaomi (Autostart card)", showBackground = true, heightDp = 1100)
+@Composable
+private fun SetupScreenNotRunningXiaomiPreview() {
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = false, showAutostartHelp = true))
 }

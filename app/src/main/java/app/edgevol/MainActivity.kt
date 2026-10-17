@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
                         onEnableService = { launchSafely(SystemSettings.accessibilitySettingsIntent()) },
                         onOpenAppInfo = { launchSafely(SystemSettings.appDetailsIntent(this@MainActivity)) },
                         onTestPanel = { volume.showPanel() },
+                        onOpenAutostart = ::openAutostartSettings,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -73,6 +74,17 @@ class MainActivity : ComponentActivity() {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, R.string.setup_error_settings_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // MIUI's Autostart screen is not public API; fall back to App info, which also links to it.
+    private fun openAutostartSettings() {
+        try {
+            startActivity(SystemSettings.autostartSettingsIntent())
+        } catch (e: ActivityNotFoundException) {
+            launchSafely(SystemSettings.appDetailsIntent(this))
+        } catch (e: SecurityException) {
+            launchSafely(SystemSettings.appDetailsIntent(this))
         }
     }
 

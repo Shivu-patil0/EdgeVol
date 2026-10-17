@@ -8,10 +8,14 @@
     <string name="setup_status_off">Accessibility service: Off</string>
 
     <string name="setup_status_not_running">Accessibility service: On, but not running</string>
-    <string name="setup_not_running_body">EdgeVol is switched on in Settings but isn\'t running, which happens when the app is cleared from Recents. Switch EdgeVol off and on again in Accessibility settings.</string>
+    <string name="setup_not_running_body">EdgeVol is switched on in Settings but isn\'t running. This happens when the phone stops it, for example when you clear recent apps. If it doesn\'t come back by itself within a minute, switch EdgeVol off and on again in Accessibility settings.</string>
     <string name="setup_not_running_button">Open Accessibility settings</string>
     <string name="setup_not_running_retry">Still not running after that? Switch it off and on once more.</string>
-    <string name="setup_not_running_hint">On Xiaomi and similar phones: lock EdgeVol in Recents, allow Autostart, and set Battery to “No restrictions”.</string>
+    <string name="setup_not_running_hint">If your phone has Autostart or battery restrictions, allow EdgeVol to start and run in the background.</string>
+
+    <string name="setup_autostart_title">Keep EdgeVol running</string>
+    <string name="setup_autostart_body">Xiaomi, Redmi and POCO phones close EdgeVol when you clear recent apps. Do two things once: allow Autostart (button below: switch EdgeVol on), then open Recents, long-press the EdgeVol card and tap the lock. Already done? You can ignore this.</string>
+    <string name="setup_autostart_button">Open Autostart settings</string>
 
     <string name="setup_ready_message">Ready. Look for a thin, faint bar on the edge of your screen (on the right, a little above the middle, until you move it). Tap it to show your phone\'s volume panel, or touch and hold it, then drag it to either side.</string>
 

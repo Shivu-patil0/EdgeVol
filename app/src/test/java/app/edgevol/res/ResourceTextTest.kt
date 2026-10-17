@@ -166,6 +166,24 @@ class ResourceTextTest {
         assertTrue(retry, retry.contains("off and on once more"))
     }
 
+    @Test
+    fun `autostart card strings explain the one-time steps`() {
+        val title = stringResource("res/values/strings.xml", "setup_autostart_title")
+        val body = stringResource("res/values/strings.xml", "setup_autostart_body")
+        val button = stringResource("res/values/strings.xml", "setup_autostart_button")
+        assertTrue(title.isNotBlank())
+        assertTrue(body, body.contains("Autostart"))
+        assertTrue(body, body.contains("lock"))
+        assertTrue(body, body.contains("once"))
+        assertTrue(button, button.contains("Autostart"))
+    }
+
+    @Test
+    fun `setup screen stays in Recents so MIUI users can lock it`() {
+        val manifest = File(mainDir(), "AndroidManifest.xml").readText()
+        assertFalse(manifest.contains("excludeFromRecents"))
+    }
+
     // Source-text guards
 
     private fun sourceFiles(root: String, vararg extensions: String): List<File> =

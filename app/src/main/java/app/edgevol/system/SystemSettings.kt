@@ -1,5 +1,6 @@
 package app.edgevol.system
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -20,6 +21,7 @@ object SystemSettings {
             serviceEnabled = enabled,
             showRestrictedSettingsHelp = shouldShowRestrictedSettingsHelp(Build.VERSION.SDK_INT),
             serviceRunning = VolumeAccessibilityService.isRunning,
+            showAutostartHelp = isXiaomiFamily(Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty()),
         )
     }
 
@@ -27,4 +29,12 @@ object SystemSettings {
 
     fun appDetailsIntent(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+
+    /** MIUI's Autostart list. Not public API: callers fall back to [appDetailsIntent] if it fails. */
+    fun autostartSettingsIntent(): Intent = Intent().setComponent(
+        ComponentName(
+            "com.miui.securitycenter",
+            "com.miui.permcenter.autostart.AutoStartManagementActivity",
+        ),
+    )
 }

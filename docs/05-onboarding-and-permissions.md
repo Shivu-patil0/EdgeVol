@@ -14,9 +14,14 @@
 
 ### Service enabled but not running (MIUI and similar)
 
-When the app process is killed (e.g. the user clears EdgeVol from Recents on MIUI), Android lists the service under *Crashed services* and **does not re-bind it** until the user switches it off and on again, although the Accessibility setting still reads "on". The setup screen detects this (`SetupStatus.serviceRunning == false` while `serviceEnabled`) and shows the *Enabled but not running* state: a plain explanation, a button to Accessibility settings, and a hint. Recovery: Settings → Accessibility → Downloaded apps → EdgeVol → switch **off**, then **on**. On the verified phone the first off/on cycle after a crash sometimes still fails to draw the handle (second cycle works), so the screen says "Still not running after that? Switch it off and on once more."
+When the app process is killed or force-stopped, Android lists the service under *Crashed services*, although the Accessibility setting still reads "on". It re-binds by itself only if the phone allows the restart. The setup screen detects this (`SetupStatus.serviceRunning == false` while `serviceEnabled`) and shows the *Enabled but not running* state: a plain explanation, the Autostart card on Xiaomi-family phones, a button to Accessibility settings, and a "switch off and on once more" line.
 
-To prevent it on Xiaomi/MIUI-type phones: **lock EdgeVol in Recents** (long-press its card → lock), allow **Autostart**, and set Battery saver to **No restrictions** for EdgeVol. A force-stop from App info also switches the service off in Settings (the screen then shows *Off*).
+**What actually stops EdgeVol on MIUI (verified on the POCO X2, 2026-10-17):**
+- **"Clear all" (MIUI *OneKeyClean*) kills every unlocked app's process**, EdgeVol included. Android then schedules a restart (≈ 30–50 s, minutes if it happens again quickly), which MIUI rejects (`AutoStartManagerService: Reject RestartService`) unless **Autostart** is allowed. **Locking EdgeVol in Recents** (long-press its card → lock) puts it in MIUI's `locked_apps` list, which "clear all" skips entirely (verified: 27 processes killed, EdgeVol untouched). On Xiaomi, Redmi and POCO phones the setup screen shows a one-time **Keep EdgeVol running** card: allow Autostart (its button opens MIUI's Autostart list, fallback App info) and lock the card. Autostart alone brings EdgeVol back after the delay above; the lock prevents the kill.
+- **Developer options → Select debug app = EdgeVol** (possible only with the debuggable debug build) makes Android force-stop EdgeVol every time it leaves Recents, with the log reason `set debug app`. Leave it at *None*.
+- **Reboot works** without help: the service starts after the first unlock (it is not direct-boot aware).
+
+Recovery when it is still not running: Settings → Accessibility → Downloaded apps → EdgeVol → switch **off**, then **on**. The first off/on cycle after a crash sometimes fails to draw the handle (a second cycle works). A force-stop from App info also switches the service off in Settings (the screen then shows *Off*).
 
 ## Permissions
 
