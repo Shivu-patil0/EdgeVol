@@ -61,6 +61,8 @@ Prefix each command with `JAVA_HOME=<path to JDK 17>`. The full M1 check is:
 ./gradlew connectedDebugAndroidTest      # on-device Compose UI tests
 ```
 
+`ui-tooling` and `ui-tooling-preview` are `debugImplementation` only, so `@Preview`s live in `app/src/debug/`. The **debug** merged manifest therefore also contains the exported, debug-only `androidx.compose.ui.tooling.PreviewActivity`; the release manifest must not. Previews are compile-checked only (no preview renderer in the CLI-only toolchain).
+
 ## Connecting a phone over Wi-Fi (no USB cable)
 
 Works on Android 11+ when the phone and the Mac are on the same network (verified with a POCO X2 on 2026-10-17). Use the full adb path: `ADB=~/Library/Android/sdk/platform-tools/adb`.

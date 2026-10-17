@@ -31,15 +31,18 @@ class SystemVolume(context: Context) {
     )
 
     /** Same as pressing a hardware volume key. Returns false if Android refused it. */
-    fun step(up: Boolean): Boolean = runCatching {
+    fun step(up: Boolean): Boolean = try {
         am.adjustSuggestedStreamVolume(
             if (up) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
             AudioManager.USE_DEFAULT_STREAM_TYPE,
             AudioManager.FLAG_SHOW_UI,
         )
-    }.isSuccess
+        true
+    } catch (e: SecurityException) { false }   // only SecurityException counts as "refused"
 }
 ```
+
+In the shipped code the wrapper also has an `internal constructor(adjust: (direction, streamType, flags) -> Unit)` so the JVM unit tests can inject a lambda instead of an `AudioManager`.
 
 - `USE_DEFAULT_STREAM_TYPE` lets **Android pick the stream exactly like the hardware keys do**: call volume during a call, media while something plays, otherwise the device default (media on Pixel since Android 9, ring on many other OEMs).
 - No activity is started; SystemUI draws its own dialog. So background-activity-launch limits don't apply, and it works from a service.
@@ -117,9 +120,9 @@ stateDiagram-v2
 
 | Window | Type | Flags | Size | Attached |
 |---|---|---|---|---|
-| Handle | `TYPE_ACCESSIBILITY_OVERLAY` | `NOT_FOCUSABLE`, `LAYOUT_NO_LIMITS` | 24 dp × 56/72/120 dp touch area | Always (while the service is enabled) |
+| Handle | `TYPE_ACCESSIBILITY_OVERLAY` | `NOT_FOCUSABLE`, `LAYOUT_NO_LIMITS`, `LAYOUT_IN_SCREEN` | 24 dp × 56/72/120 dp touch area (M2: 72 dp) | Always (while the service is enabled) |
 
-`NOT_FOCUSABLE` ensures we never steal keyboard focus. The handle is the only window EdgeVol ever adds.
+`NOT_FOCUSABLE` ensures we never steal keyboard focus. `LAYOUT_IN_SCREEN` makes the vertical position a percentage of the real screen height. The window title is `EdgeVolHandle` so it can be found in `adb shell dumpsys window windows`. Gravity is physical `TOP | RIGHT` (or `LEFT`), never `START`/`END`. The handle is the only window EdgeVol ever adds. *Amendment approved by the user for M2.*
 
 ## Manifest sketch
 
@@ -165,9 +168,10 @@ stateDiagram-v2
 
 `res/xml/accessibility_service_config.xml`: minimal and privacy-preserving.
 
+The service ignores all events, so M2 declares **no** `android:accessibilityEventTypes` (whether a service without event types still connects is verified on the phone). Fallback if it doesn't connect: `android:accessibilityEventTypes="typeWindowStateChanged"` plus `android:packageNames="app.edgevol"`, so only EdgeVol's own events are ever delivered.
+
 ```xml
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="false"
     android:description="@string/a11y_service_description"
@@ -214,6 +218,8 @@ This is the **only** API surface between `platform-dev` and `ui-dev` code (see t
 
 **Delivered per milestone.** Each signature is tagged with the milestone that introduces it. M1 ships only the parts tagged `M1`; the rest arrive with M2 and M3. In particular, M1's `SetupScreen` is `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`; the `prefs`, `onAddTile`, `onTestPanel` and `onPrefsChange` parameters are added in M2 (`onTestPanel`) and M3 (the rest). *Amendment approved by the user on 2026-10-17.*
 
+**M2 additions (approved by the user):** `SystemVolume`; `SetupStatus.showRestrictedSettingsHelp: Boolean = false` (filled by `SystemSettings.status()` from `SDK_INT >= 33`, so `SetupScreen` stays stateless and SDK checks stay in platform code); `SetupScreen` gains `onTestPanel`. The handle position is kept in memory only in M2 (`HandleDefaults`); M3 replaces it with `Prefs`.
+
 **Platform → UI** (owned by `platform-dev`):
 
 ```kotlin
@@ -240,7 +246,10 @@ class PrefsRepository(context: Context) {
 }
 
 package app.edgevol.system
-data class SetupStatus(val serviceEnabled: Boolean)              // M1
+data class SetupStatus(                                          // M1; M2 adds the second field
+    val serviceEnabled: Boolean,
+    val showRestrictedSettingsHelp: Boolean = false,             // M2: true on API 33+ (platform decides)
+)
 object SystemSettings {
     fun status(context: Context): SetupStatus                    // M1
     fun accessibilitySettingsIntent(): Intent                    // M1
@@ -269,6 +278,7 @@ package app.edgevol.ui.setup
 ```
 
 M1 form: `SetupScreen(status, onEnableService, onOpenAppInfo, modifier)`.
+M2 form: `SetupScreen(status, onEnableService, onOpenAppInfo, onTestPanel, modifier)`. The restricted-settings card shows only when `!status.serviceEnabled && status.showRestrictedSettingsHelp`; the *Try it* card shows in both states. `@Preview`s live in `app/src/debug/java/app/edgevol/ui/` (`ui-tooling` and `ui-tooling-preview` are `debugImplementation`).
 
 ## Planned repository layout
 
@@ -300,6 +310,7 @@ phone_audio_control/
         │   │   ├── system/SystemSettings.kt
         │   │   └── ui/{setup,theme}/…
         │   └── res/{xml,drawable,mipmap-anydpi,values}/…   # values/strings_system.xml = platform strings
+        ├── debug/java/app/edgevol/ui/   # @Preview composables (debug only)
         ├── test/                   # JVM + Robolectric
         └── androidTest/            # Compose UI + on-device
 ```

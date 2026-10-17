@@ -61,3 +61,19 @@ Lint warnings (non-blocking): `OldTargetApi` (targetSdk 36 while compileSdk is 3
 - Ruling: accept analyst suggestions as non-blocking: icon pills slightly outside the 66dp circular safe zone (M4 replaces the art); `innerPadding` clips the scroll viewport instead of scrolling under the bars; the disclosure text is duplicated in `strings.xml` and `a11y_service_description` — cosmetic/low risk — copies may drift until M4.
 - Ruling: the service description and setup text mention the Quick Settings tile before it exists (M3) — spec text per docs/05 — users see a tile mention for two milestones.
 - Note: the Gradle wrapper download from the GitHub release-assets redirect timed out in the JVM on first run; the verified zip was pre-seeded into `~/.gradle/wrapper/dists`. Retry on a fresh machine.
+
+## M2 · Core engine ⏳ (in progress)
+
+Plan: user approved all defaults at Gate 1. Base commit for review diffs: `4cac952` (after committing the pending roadmap change).
+
+| Task | Owner | Result | Commit |
+|---|---|---|---|
+| M0 Docs/process prep (03/04/05/06/07, ownership) | manager | Done | see git log |
+
+- Ruling: R1 handle position is in memory only until M3 (`HandleDefaults`: RIGHT, 40%, 72 dp, 35%) — user-approved default — position resets when the service restarts until M3.
+- Ruling: R2 *Try it* shows in both Off and On states — needs no permission, isolates `SystemVolume` from overlay bugs.
+- Ruling: R3 contract change `SetupStatus.showRestrictedSettingsHelp` (default `false`, set from `SDK_INT >= 33` in the platform) — keeps `SetupScreen` stateless and SDK checks in platform code — M1 callers still compile.
+- Ruling: R4 previews live in `app/src/debug/java/app/edgevol/ui/**`; ui-dev ownership extended; `ui-tooling` + `ui-tooling-preview` are `debugImplementation` only — the debug manifest gains an exported `PreviewActivity`, release does not.
+- Ruling: R5 window flags add `FLAG_LAYOUT_IN_SCREEN` and title `EdgeVolHandle` (docs/03) — y = percent of real screen height and the window is greppable in `dumpsys`.
+- Ruling: F4/R6 the accessibility config drops `accessibilityEventTypes`; fallback is `typeWindowStateChanged` + `packageNames=app.edgevol` — verified on the phone.
+- Ruling: F3 service description / in-app disclosure rewritten in plain language (no `canRetrieveWindowContent`, no tile sentence until M3).

@@ -19,7 +19,7 @@ EdgeVol draws only two things: the **edge handle** and the **setup screen**. All
 | Property | Default | Configurable |
 |---|---|---|
 | Side | Right | Left / Right |
-| Vertical position | 40% of screen height | Long-press + drag on the handle, or a slider in settings |
+| Vertical position | 40% of screen height | Long-press + drag on the handle, or a slider in settings. **M2: the dragged position is kept in memory only** (lost when the service restarts) until M3 adds persistence |
 | Visual size | 4 dp × 72 dp pill | S 56 dp / **M 72 dp** / L 120 dp |
 | Touch area | 24 dp wide (invisible) | — |
 | Opacity | 35% | 10–80% (0% = "QS tile only" mode) |

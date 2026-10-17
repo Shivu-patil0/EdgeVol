@@ -27,10 +27,14 @@ Showing the system volume panel and stepping volume (`AudioManager.adjustSuggest
 
 ## Accessibility service disclosure (shown before step 4)
 
-> **EdgeVol uses Android's Accessibility service only to keep its small volume handle on the screen edge above other apps.**
-> It does **not** read, collect or transmit anything on your screen (`canRetrieveWindowContent = false`), has no internet access, and performs only one system action: closing the notification shade when you use the Quick Settings tile.
+> **EdgeVol uses Android's Accessibility service only to keep its small volume handle on the screen edge, above other apps.**
+> It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show or change the volume.
 
-This text also goes in `@string/a11y_service_description`, which Android shows on the accessibility settings page.
+The code-level facts (`canRetrieveWindowContent = false`, no `INTERNET` permission) are enforced by tests, not stated in user-facing text. The Quick Settings tile sentence ("closing the notification shade when you use the Quick Settings tile") is added in M3 together with the tile.
+
+The shipped `@string/a11y_service_description` (shown by Android on the accessibility settings page) and the in-app disclosure (`setup_disclosure_body`) use this exact text (M2):
+
+> EdgeVol uses Android's Accessibility service only to keep its small volume handle on the screen edge, above other apps. It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show or change the volume.
 
 ## Privacy summary
 
