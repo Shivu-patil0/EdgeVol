@@ -65,17 +65,20 @@ fun SetupScreen(
                 modifier = Modifier.semantics { heading() },
             )
 
-            StatusCard(enabled = status.serviceEnabled)
+            val state = status.toSetupState()
+            StatusCard(state = state)
 
-            if (status.serviceEnabled) {
-                Text(
+            when (state) {
+                SetupState.Running -> Text(
                     text = stringResource(R.string.setup_ready_message),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-            } else {
-                ServiceOffContent(onEnableService = onEnableService)
-                if (status.showRestrictedSettingsHelp) {
-                    RestrictedSettingsCard(onOpenAppInfo = onOpenAppInfo)
+                SetupState.EnabledNotRunning -> NotRunningContent(onOpenSettings = onEnableService)
+                SetupState.Off -> {
+                    ServiceOffContent(onEnableService = onEnableService)
+                    if (status.showRestrictedSettingsHelp) {
+                        RestrictedSettingsCard(onOpenAppInfo = onOpenAppInfo)
+                    }
                 }
             }
 
@@ -86,16 +89,17 @@ fun SetupScreen(
 }
 
 @Composable
-private fun StatusCard(enabled: Boolean) {
-    val container = if (enabled) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
+private fun StatusCard(state: SetupState) {
+    val colors = MaterialTheme.colorScheme
+    val container = when (state) {
+        SetupState.Running -> colors.primaryContainer
+        SetupState.EnabledNotRunning -> colors.errorContainer
+        SetupState.Off -> colors.surfaceVariant
     }
-    val content = if (enabled) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    val content = when (state) {
+        SetupState.Running -> colors.onPrimaryContainer
+        SetupState.EnabledNotRunning -> colors.onErrorContainer
+        SetupState.Off -> colors.onSurfaceVariant
     }
     // One merged node, announced politely when the status changes.
     Card(
@@ -113,17 +117,51 @@ private fun StatusCard(enabled: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
-                imageVector = if (enabled) CheckIcon else CrossIcon,
+                imageVector = when (state) {
+                    SetupState.Running -> CheckIcon
+                    SetupState.EnabledNotRunning -> WarningIcon
+                    SetupState.Off -> CrossIcon
+                },
                 contentDescription = null,
                 modifier = Modifier.size(28.dp),
             )
             Text(
                 text = stringResource(
-                    if (enabled) R.string.setup_status_on else R.string.setup_status_off,
+                    when (state) {
+                        SetupState.Running -> R.string.setup_status_on
+                        SetupState.EnabledNotRunning -> R.string.setup_status_not_running
+                        SetupState.Off -> R.string.setup_status_off
+                    },
                 ),
                 style = MaterialTheme.typography.titleMedium,
             )
         }
+    }
+}
+
+@Composable
+private fun NotRunningContent(onOpenSettings: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            text = stringResource(R.string.setup_not_running_body),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Button(
+            onClick = onOpenSettings,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.setup_not_running_button),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+        Text(
+            text = stringResource(R.string.setup_not_running_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -252,5 +290,30 @@ private val CrossIcon: ImageVector by lazy {
         lineTo(18f, 18f)
         moveTo(18f, 6f)
         lineTo(6f, 18f)
+    }.build()
+}
+
+// Triangle with an exclamation mark.
+private val WarningIcon: ImageVector by lazy {
+    ImageVector.Builder(
+        name = "Warning",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round,
+    ) {
+        moveTo(12f, 3.5f)
+        lineTo(21.5f, 20f)
+        lineTo(2.5f, 20f)
+        close()
+        moveTo(12f, 9.5f)
+        lineTo(12f, 14.5f)
+        moveTo(12f, 17.2f)
+        lineTo(12f, 17.3f)
     }.build()
 }

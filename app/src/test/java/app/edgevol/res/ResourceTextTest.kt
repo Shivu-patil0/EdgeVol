@@ -115,4 +115,70 @@ class ResourceTextTest {
         walk(doc.documentElement)
         assertTrue("INTERNET found: $offenders", offenders.isEmpty())
     }
+
+    // Wording
+
+    private val panelSuffix = "show its volume panel."
+
+    @Test
+    fun `disclosure and accessibility description do not claim to change the volume or drag`() {
+        for (text in listOf(description(), disclosure())) {
+            assertFalse(text, text.contains("change the volume", ignoreCase = true))
+            assertFalse(text, text.contains("drag", ignoreCase = true))
+        }
+    }
+
+    @Test
+    fun `disclosure and accessibility description end with show its volume panel`() {
+        assertTrue(description(), description().endsWith(panelSuffix))
+        assertTrue(disclosure(), disclosure().endsWith(panelSuffix))
+    }
+
+    @Test
+    fun `setup not running strings exist and carry the key wording`() {
+        val status = stringResource("res/values/strings.xml", "setup_status_not_running")
+        val body = stringResource("res/values/strings.xml", "setup_not_running_body")
+        val button = stringResource("res/values/strings.xml", "setup_not_running_button")
+        val hint = stringResource("res/values/strings.xml", "setup_not_running_hint")
+
+        assertTrue(status.isNotBlank())
+        assertTrue(body.isNotBlank())
+        assertTrue(button.isNotBlank())
+        assertTrue(hint.isNotBlank())
+        assertTrue(body, body.contains("isn't running"))
+        assertTrue(body, body.contains("off and on again"))
+        assertTrue(hint, hint.contains("Autostart"))
+    }
+
+    @Test
+    fun `setup ready message explains tap again to close and does not claim volume changes`() {
+        val ready = stringResource("res/values/strings.xml", "setup_ready_message")
+        assertTrue(ready, ready.contains("tap again to close it"))
+        assertFalse(ready, ready.contains("change the volume", ignoreCase = true))
+    }
+
+    // Source-text guards
+
+    private fun sourceFiles(root: String, vararg extensions: String): List<File> =
+        File(mainDir(), root).walkTopDown()
+            .filter { it.isFile && it.extension in extensions }
+            .toList()
+            .also { assertTrue("no source files under $root", it.isNotEmpty()) }
+
+    @Test
+    fun `no INTERNET in main kotlin and resource sources`() {
+        val offenders = (sourceFiles("java", "kt") + sourceFiles("res", "xml"))
+            .filter { it.readText().contains("INTERNET") }
+        assertTrue("INTERNET found in $offenders", offenders.isEmpty())
+    }
+
+    @Test
+    fun `drag to step volume is gone from main sources`() {
+        val forbidden = listOf(".step(", "Stepping", "SEGMENT_TICK", "STEP_DP", "HandleAction.Step")
+        val offenders = sourceFiles("java", "kt").flatMap { file ->
+            val text = file.readText()
+            forbidden.filter { text.contains(it) }.map { "${file.name}: $it" }
+        }
+        assertTrue("removed API still referenced: $offenders", offenders.isEmpty())
+    }
 }

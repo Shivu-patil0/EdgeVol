@@ -7,10 +7,15 @@
     <string name="setup_status_on">Accessibility service: On</string>
     <string name="setup_status_off">Accessibility service: Off</string>
 
-    <string name="setup_ready_message">Ready. Look for a thin, faint bar on the right edge of your screen, a little above the middle (touch and hold, then drag, to move it). Tap it to open your phone\'s own volume panel, or drag along it to change the volume, in any app.</string>
+    <string name="setup_status_not_running">Accessibility service: On, but not running</string>
+    <string name="setup_not_running_body">EdgeVol is switched on in Settings but isn\'t running, which happens when the app is cleared from Recents. Switch EdgeVol off and on again in Accessibility settings.</string>
+    <string name="setup_not_running_button">Open Accessibility settings</string>
+    <string name="setup_not_running_hint">On Xiaomi and similar phones: lock EdgeVol in Recents, allow Autostart, and set Battery to “No restrictions”.</string>
+
+    <string name="setup_ready_message">Ready. Look for a thin, faint bar on the edge of your screen (on the right, a little above the middle, until you move it). Tap it to show your phone\'s volume panel, tap again to close it, or touch and hold it, then drag it to either side.</string>
 
     <string name="setup_disclosure_title">Why EdgeVol needs this</string>
-    <string name="setup_disclosure_body">EdgeVol uses Android\'s Accessibility service only to keep its small volume handle on the screen edge, above other apps. It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show or change the volume.</string>
+    <string name="setup_disclosure_body">EdgeVol uses Android\'s Accessibility service only to keep its small volume handle on the screen edge, above other apps. It does not read, collect or send anything on your screen, and it has no internet access. The handle only asks your phone to show its volume panel.</string>
 
     <string name="setup_try_title">Try it</string>
     <string name="setup_try_body">Open your phone\'s own volume panel to check that it works.</string>

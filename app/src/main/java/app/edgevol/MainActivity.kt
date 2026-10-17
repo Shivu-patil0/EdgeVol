@@ -3,6 +3,8 @@ package app.edgevol
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +26,9 @@ class MainActivity : ComponentActivity() {
 
     // Placeholder only: replaced in onCreate before setContent, so it is never drawn.
     private var status by mutableStateOf(SetupStatus(serviceEnabled = false))
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val recheck = Runnable { status = SystemSettings.status(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -48,6 +53,19 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         status = SystemSettings.status(this)
+        // A healthy service in a freshly started process connects slightly after the activity.
+        handler.removeCallbacks(recheck)
+        handler.postDelayed(recheck, RECHECK_DELAY_MS)
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(recheck)
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(recheck)
+        super.onDestroy()
     }
 
     private fun launchSafely(intent: Intent) {
@@ -56,5 +74,9 @@ class MainActivity : ComponentActivity() {
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, R.string.setup_error_settings_unavailable, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private companion object {
+        const val RECHECK_DELAY_MS = 1500L
     }
 }

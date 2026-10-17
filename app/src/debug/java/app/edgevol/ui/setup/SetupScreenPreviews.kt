@@ -34,13 +34,31 @@ private fun SetupScreenOffRestrictedPreview() {
 @Preview(name = "Service on", showBackground = true)
 @Composable
 private fun SetupScreenOnPreview() {
-    PreviewSetup(SetupStatus(serviceEnabled = true))
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = true))
+}
+
+@Preview(name = "Enabled, not running (light)", showBackground = true, uiMode = UI_MODE_NIGHT_NO, heightDp = 900)
+@Composable
+private fun SetupScreenNotRunningLightPreview() {
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = false))
+}
+
+@Preview(name = "Enabled, not running (dark)", showBackground = true, uiMode = UI_MODE_NIGHT_YES, heightDp = 900)
+@Composable
+private fun SetupScreenNotRunningDarkPreview() {
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = false))
 }
 
 @Preview(name = "Light", showBackground = true, uiMode = UI_MODE_NIGHT_NO)
 @Composable
 private fun SetupScreenLightPreview() {
-    PreviewSetup(SetupStatus(serviceEnabled = true))
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = true))
+}
+
+@Preview(name = "Running (dark)", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun SetupScreenRunningDarkPreview() {
+    PreviewSetup(SetupStatus(serviceEnabled = true, serviceRunning = true))
 }
 
 @Preview(name = "Dark", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
