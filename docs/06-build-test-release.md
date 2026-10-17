@@ -4,9 +4,9 @@
 
 | Tool | Status on this machine | Plan |
 |---|---|---|
-| JDK 17 | ✅ present (JDK 17.0.15) | Use as Gradle JDK |
-| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). No emulator installed; use a phone with USB debugging |
-| Gradle | via wrapper (`./gradlew`) | Generated in M1; no global install needed |
+| JDK 17 | ✅ present (JDK 17.0.15; not the default `java`) | Export `JAVA_HOME` to it for every Gradle command, e.g. `JAVA_HOME=<path to JDK 17> ./gradlew …`. Never commit the path or `org.gradle.java.home` |
+| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `platforms/android-37.0` (auto-downloaded by Gradle, required by `compileSdk 37`), `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). `sdk.dir` is in the git-ignored `local.properties`. No emulator installed; use a phone with USB debugging |
+| Gradle | ✅ wrapper **9.8.1** (`-bin`, sha256 pinned); AGP **9.4.1** with built-in Kotlin; Kotlin **2.4.21**; Compose BOM **2026.09.00** | No global install needed. If the wrapper download times out (GitHub release-assets redirect), retry or pre-seed `~/.gradle/wrapper/dists` |
 | Node / `npx` | ✅ present | Only used for the `skills` CLI |
 
 **Install options for the Android SDK** (pick **one**; options 2a and 2b are alternatives, not steps):
@@ -49,6 +49,10 @@ npx skills experimental_install # restore from skills-lock.json on a fresh clone
 ```
 
 ## Build & run
+
+Prefix each command with `JAVA_HOME=<path to JDK 17>`. The full M1 check is:
+`./gradlew testDebugUnitTest lintDebug assembleDebug :app:processDebugManifest :app:processReleaseManifest`
+(plus `./gradlew assembleRelease` for R8). Lint must report 0 errors; warnings are reported, not blocking.
 
 ```bash
 ./gradlew assembleDebug                  # build

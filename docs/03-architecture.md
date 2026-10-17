@@ -304,4 +304,4 @@ phone_audio_control/
         └── androidTest/            # Compose UI + on-device
 ```
 
-`app.edgevol` is a placeholder application ID. Renaming is trivial until M1 is built.
+`app.edgevol` is the final application ID (user decision, M1).

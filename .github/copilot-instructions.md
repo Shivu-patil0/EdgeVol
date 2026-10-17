@@ -3,7 +3,7 @@
 EdgeVol is a sideloaded Android app that puts **virtual volume keys** on the screen edge. An invisible handle, drawn by an AccessibilityService overlay, works in every app: a tap shows **Android's built-in volume panel**, and dragging along the handle steps volume like Volume +/−. A Quick Settings tile does the same. The specs live in [docs/](../docs/README.md); **docs are the source of truth**. Read the relevant doc before changing behavior.
 
 ## Stack & build
-- Kotlin, Jetpack Compose (Material 3; setup screen only), single `app` module, DataStore, Gradle Kotlin DSL + version catalog (`gradle/libs.versions.toml`). minSdk 26, target/compile 36, JDK 17.
+- Kotlin, Jetpack Compose (Material 3; setup screen only), single `app` module, DataStore, Gradle Kotlin DSL + version catalog (`gradle/libs.versions.toml`). minSdk 26, targetSdk 36, compileSdk 37 (the Compose BOM requires it; do not lower it), JDK 17. Build tools: Gradle 9.8.1, AGP 9.4.1 (built-in Kotlin, so do **not** apply `org.jetbrains.kotlin.android`), Kotlin 2.4.21.
 - `./gradlew assembleDebug` · `./gradlew testDebugUnitTest` · `./gradlew connectedDebugAndroidTest` (more in [docs/06](../docs/06-build-test-release.md)).
 - Source root: `app/src/main/java/app/edgevol/`.
 
