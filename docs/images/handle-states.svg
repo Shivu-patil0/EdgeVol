@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="t">
+  <title id="t">EdgeVol edge handle states and gestures</title>
+  <defs>
+    <style>
+      text { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #111827; }
+      .h { font-size: 20px; font-weight: 700; }
+      .cap { font-size: 16px; font-weight: 700; }
+      .sub { font-size: 13px; fill: #4B5563; }
+      .ann { font-size: 12px; fill: #4338CA; font-weight: 600; }
+      .bar { fill: #E5E7EB; }
+    </style>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4338CA"/>
+    </marker>
+    <!-- background content for an edge close-up (226 x 340) -->
+    <symbol id="edge" viewBox="0 0 240 340">
+      <rect x="200" width="40" height="340" rx="20" fill="#111827"/>
+      <rect width="226" height="340" rx="18" fill="#FFFFFF"/>
+      <rect x="18" y="24"  width="170" height="12" rx="6" class="bar"/>
+      <rect x="18" y="46"  width="120" height="10" rx="5" class="bar"/>
+      <rect x="18" y="80"  width="56" height="40" rx="8" class="bar"/><rect x="86" y="86" width="120" height="10" rx="5" class="bar"/>
+      <rect x="18" y="140" width="56" height="40" rx="8" class="bar"/><rect x="86" y="146" width="110" height="10" rx="5" class="bar"/>
+      <rect x="18" y="200" width="56" height="40" rx="8" class="bar"/><rect x="86" y="206" width="125" height="10" rx="5" class="bar"/>
+      <rect x="18" y="260" width="56" height="40" rx="8" class="bar"/><rect x="86" y="266" width="100" height="10" rx="5" class="bar"/>
+    </symbol>
+  </defs>
+
+  <rect width="1200" height="560" fill="#F8F8FC"/>
+  <text x="60" y="48" class="h">EdgeVol · edge handle states &amp; gestures (close-up of the right screen edge)</text>
+
+  <!-- 1. Idle: screen edge at x = 286 -->
+  <use href="#edge" x="60" y="90" width="240" height="340"/>
+  <rect x="262" y="214" width="24" height="92" fill="#6366F1" fill-opacity="0.08" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <rect x="282" y="224" width="4" height="72" rx="2" fill="#6366F1" opacity="0.35"/>
+  <text x="80" y="200" class="ann">visual: 4 × 72 dp, 35%</text>
+  <path d="M228,204 L278,228" stroke="#4338CA" stroke-width="1.3"/>
+  <text x="80" y="336" class="ann">touch target: 24 dp wide</text>
+  <path d="M232,330 L264,306" stroke="#4338CA" stroke-width="1.3"/>
+
+  <!-- 2. Pressed: screen edge at x = 566 -->
+  <use href="#edge" x="340" y="90" width="240" height="340"/>
+  <rect x="558" y="220" width="8" height="80" rx="4" fill="#6366F1"/>
+  <path d="M546,246 q-6,14 0,28 M536,240 q-10,20 0,40" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round"/>
+  <text x="360" y="200" class="ann">pressed: 8 dp · 100% · haptic tick</text>
+
+  <!-- 3. Drag along the edge = volume rocker: screen edge at x = 846 -->
+  <use href="#edge" x="620" y="90" width="240" height="340"/>
+  <rect x="838" y="150" width="8" height="200" rx="4" fill="#6366F1"/>
+  <circle cx="842" cy="166" r="13" fill="#6366F1" fill-opacity="0.25" stroke="#6366F1" stroke-width="2"/>
+  <path d="M814,340 L814,176" stroke="#4338CA" stroke-width="2.4" marker-end="url(#arr)"/>
+  <g stroke="#4338CA" stroke-width="2" stroke-linecap="round">
+    <path d="M808,310 h12"/><path d="M808,278 h12"/><path d="M808,246 h12"/><path d="M808,214 h12"/>
+  </g>
+  <text x="798" y="314" class="ann" text-anchor="end">+1</text>
+  <text x="798" y="282" class="ann" text-anchor="end">+1</text>
+  <text x="798" y="250" class="ann" text-anchor="end">+1</text>
+  <text x="798" y="218" class="ann" text-anchor="end">+1</text>
+  <text x="640" y="380" class="ann">24 dp of drag = 1 step</text>
+
+  <!-- 4. Reposition: screen edge at x = 1126 -->
+  <use href="#edge" x="900" y="90" width="240" height="340"/>
+  <rect x="1122" y="140" width="4" height="72" rx="2" fill="none" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <rect x="1122" y="320" width="4" height="72" rx="2" fill="none" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <rect x="1120" y="226" width="6" height="80" rx="3" fill="#6366F1"/>
+  <path d="M1100,222 L1100,170" stroke="#4338CA" stroke-width="2.2" marker-end="url(#arr)"/>
+  <path d="M1100,310 L1100,362" stroke="#4338CA" stroke-width="2.2" marker-end="url(#arr)"/>
+  <text x="920" y="270" class="ann">long-press 500 ms</text>
+  <text x="920" y="288" class="ann">then drag</text>
+
+  <!-- captions -->
+  <text x="170"  y="470" class="cap" text-anchor="middle">Idle</text>
+  <text x="170"  y="494" class="sub" text-anchor="middle">nearly invisible; wider invisible</text>
+  <text x="170"  y="514" class="sub" text-anchor="middle">touch area makes it easy to hit</text>
+
+  <text x="450"  y="470" class="cap" text-anchor="middle">Pressed / tap</text>
+  <text x="450"  y="494" class="sub" text-anchor="middle">grows + full opacity + haptic; a tap</text>
+  <text x="450"  y="514" class="sub" text-anchor="middle">shows Android's volume panel</text>
+
+  <text x="730"  y="470" class="cap" text-anchor="middle">Drag up / down</text>
+  <text x="730"  y="494" class="sub" text-anchor="middle">virtual Volume +/− keys; vertical, so it</text>
+  <text x="730"  y="514" class="sub" text-anchor="middle">doesn't fight the horizontal back gesture</text>
+
+  <text x="1010" y="470" class="cap" text-anchor="middle">Reposition</text>
+  <text x="1010" y="494" class="sub" text-anchor="middle">move along the edge; position</text>
+  <text x="1010" y="514" class="sub" text-anchor="middle">is saved in Prefs</text>
+</svg>

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="t">
+  <title id="t">EdgeVol architecture</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #111827; }
+      .h { font-size: 20px; font-weight: 700; }
+      .b { font-size: 17px; font-weight: 600; }
+      .s { font-size: 13px; fill: #4B5563; }
+      .m { font-size: 12.5px; font-family: "SF Mono", Menlo, Consolas, monospace; fill: #374151; }
+      .cap { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; fill: #6B7280; }
+      .lbl { font-size: 12px; fill: #4B5563; font-style: italic; }
+      .card { fill: #FFFFFF; stroke: #D1D5DB; stroke-width: 1.5; }
+      .line { stroke: #4B5563; stroke-width: 2; fill: none; }
+      .dash { stroke: #9CA3AF; stroke-width: 2; fill: none; stroke-dasharray: 6 5; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#F8F8FC"/>
+  <text x="60" y="48" class="h">EdgeVol · architecture (edge handle = virtual volume keys → Android's own panel)</text>
+
+  <!-- Row 1: triggers -->
+  <text x="60" y="88" class="cap">TRIGGERS</text>
+  <rect x="60"  y="100" width="320" height="76" rx="14" class="card"/>
+  <rect x="60"  y="100" width="8" height="76" rx="4" fill="#6366F1"/>
+  <text x="84"  y="132" class="b">Edge handle</text>
+  <text x="84"  y="156" class="s">tap · drag up/down · long-press to move</text>
+
+  <rect x="440" y="100" width="320" height="76" rx="14" class="card"/>
+  <rect x="440" y="100" width="8" height="76" rx="4" fill="#6366F1"/>
+  <text x="464" y="132" class="b">Quick Settings tile</text>
+  <text x="464" y="156" class="m">VolumeTileService</text>
+
+  <rect x="820" y="100" width="320" height="76" rx="14" class="card"/>
+  <rect x="820" y="100" width="8" height="76" rx="4" fill="#9CA3AF"/>
+  <text x="844" y="132" class="b">Launcher icon</text>
+  <text x="844" y="156" class="m">MainActivity · SetupScreen</text>
+
+  <!-- Row 2: host service -->
+  <rect x="60" y="236" width="1080" height="210" rx="18" fill="#EEF0FF" stroke="#6366F1" stroke-width="2"/>
+  <text x="84" y="268" class="b">VolumeAccessibilityService</text>
+  <text x="340" y="268" class="s">bound by the system · always on · canRetrieveWindowContent = false (never reads the screen)</text>
+
+  <rect x="84" y="288" width="460" height="138" rx="12" class="card"/>
+  <text x="104" y="316" class="b">OverlayController</text>
+  <text x="104" y="342" class="m">showHandle() · removeHandle()</text>
+  <text x="104" y="366" class="m">WindowManager + TYPE_ACCESSIBILITY_OVERLAY</text>
+  <text x="104" y="390" class="s">exactly one window: the handle (plain View)</text>
+  <text x="104" y="412" class="s">no SYSTEM_ALERT_WINDOW · no foreground notification</text>
+
+  <rect x="572" y="288" width="250" height="60" rx="12" class="card"/>
+  <text x="592" y="314" class="b">EdgeHandleView</text>
+  <text x="592" y="334" class="s">touch · haptics · a11y actions</text>
+  <rect x="572" y="366" width="250" height="60" rx="12" class="card"/>
+  <text x="592" y="392" class="b">HandleGestures</text>
+  <text x="592" y="412" class="s">24 dp of drag → 1 step (pure Kotlin)</text>
+
+  <rect x="850" y="288" width="266" height="138" rx="12" class="card"/>
+  <text x="870" y="316" class="b">Shade collapse</text>
+  <text x="870" y="342" class="m">performGlobalAction(</text>
+  <text x="870" y="362" class="m">  DISMISS_NOTIFICATION_SHADE)</text>
+  <text x="870" y="390" class="s">used when the tile is tapped</text>
+  <text x="870" y="410" class="s">(Android 12+ / API 31)</text>
+
+  <path d="M544,357 L572,318" class="line" marker-end="url(#arr)"/>
+  <path d="M697,348 L697,366" class="line" marker-end="url(#arr)"/>
+
+  <!-- Row 1 -> Row 2 arrows -->
+  <path d="M220,176 L220,236" class="line" marker-end="url(#arr)"/>
+  <text x="230" y="212" class="lbl">touch events</text>
+  <path d="M600,176 L600,236" class="line" marker-end="url(#arr)"/>
+  <text x="610" y="212" class="lbl">service.showPanel(fromTile)</text>
+  <path d="M980,176 L980,236" class="dash" marker-end="url(#arr)"/>
+  <text x="990" y="212" class="lbl">status · enable</text>
+
+  <!-- Row 3 -->
+  <text x="60" y="490" class="cap">VOLUME · STATE</text>
+  <rect x="60"  y="502" width="580" height="100" rx="14" class="card" stroke="#6366F1"/>
+  <text x="84"  y="534" class="b">SystemVolume</text>
+  <text x="84"  y="558" class="m">showPanel()  ·  step(up): Boolean</text>
+  <text x="84"  y="580" class="s">refused step (e.g. would toggle DND) → falls back to showPanel()</text>
+
+  <rect x="820" y="502" width="320" height="100" rx="14" class="card"/>
+  <text x="844" y="534" class="b">Prefs (DataStore)</text>
+  <text x="844" y="558" class="s">handle side · position · size · opacity</text>
+  <text x="844" y="580" class="s">edited on the setup screen</text>
+
+  <path d="M697,446 L697,474 L420,474 L420,502" class="line" marker-end="url(#arr)"/>
+  <text x="430" y="494" class="lbl">tap → showPanel() · drag → step(±1)</text>
+  <path d="M980,502 L980,446" class="dash" marker-end="url(#arr)"/>
+  <text x="990" y="480" class="lbl">config</text>
+
+  <!-- Row 4: Android -->
+  <rect x="60" y="652" width="1080" height="118" rx="18" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="1116" y="682" class="cap" text-anchor="end">ANDROID SYSTEM</text>
+  <rect x="84"  y="700" width="230" height="46" rx="23" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="199" y="729" class="b" text-anchor="middle">AudioManager</text>
+  <rect x="364" y="694" width="330" height="58" rx="29" fill="#EEF0FF" stroke="#6366F1" stroke-width="2"/>
+  <text x="529" y="719" class="b" text-anchor="middle">SystemUI volume panel</text>
+  <text x="529" y="739" class="s" text-anchor="middle">the phone's own UI (look varies by OEM)</text>
+  <rect x="744" y="700" width="170" height="46" rx="23" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="829" y="729" class="b" text-anchor="middle">WindowManager</text>
+  <rect x="934" y="700" width="182" height="46" rx="23" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1025" y="729" class="b" text-anchor="middle">SystemUI · QS</text>
+
+  <path d="M199,602 L199,700" class="line" marker-end="url(#arr)"/>
+  <text x="210" y="630" class="lbl">adjustSuggestedStreamVolume(ADJUST_SAME | RAISE | LOWER,</text>
+  <text x="210" y="646" class="lbl">USE_DEFAULT_STREAM_TYPE, FLAG_SHOW_UI): same path as the hardware keys</text>
+  <path d="M314,723 L362,723" class="line" marker-end="url(#arr)"/>
+</svg>

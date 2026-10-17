@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="t">
+  <title id="t">EdgeVol first-run onboarding flow</title>
+  <defs>
+    <style>
+      text { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #111827; }
+      .h { font-size: 20px; font-weight: 700; }
+      .t { font-size: 15px; font-weight: 700; }
+      .s { font-size: 12.5px; fill: #4B5563; }
+      .n { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+      .row { font-size: 14px; font-weight: 600; }
+      .chip { font-size: 12.5px; font-weight: 700; }
+      .req { fill: #FFFFFF; stroke: #6366F1; stroke-width: 2; }
+      .opt { fill: #FFFFFF; stroke: #9CA3AF; stroke-width: 2; stroke-dasharray: 7 5; }
+      .line { stroke: #6B7280; stroke-width: 2; fill: none; }
+    </style>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="680" fill="#F8F8FC"/>
+  <text x="40" y="48" class="h">EdgeVol · first-run onboarding (sideloaded APK) · one permission only</text>
+
+  <!-- step cards: x = 40 + i*232, w = 196, y = 80, h = 200 -->
+  <rect x="40"  y="80" width="196" height="200" rx="16" class="req"/>
+  <circle cx="68" cy="110" r="16" fill="#6366F1"/><text x="68" y="115" class="n" text-anchor="middle">1</text>
+  <text x="56" y="152" class="t">Install APK</text>
+  <text x="56" y="178" class="s">adb install app.apk</text>
+  <text x="56" y="198" class="s">or open the .apk file</text>
+  <text x="56" y="218" class="s">on the phone</text>
+
+  <rect x="272" y="80" width="196" height="200" rx="16" class="req"/>
+  <circle cx="300" cy="110" r="16" fill="#6366F1"/><text x="300" y="115" class="n" text-anchor="middle">2</text>
+  <text x="288" y="152" class="t">Open EdgeVol</text>
+  <text x="288" y="178" class="s">Setup screen shows</text>
+  <text x="288" y="198" class="s">what is still missing</text>
+  <text x="288" y="218" class="s">(live status)</text>
+
+  <rect x="504" y="80" width="196" height="200" rx="16" class="opt"/>
+  <circle cx="532" cy="110" r="16" fill="#9CA3AF"/><text x="532" y="115" class="n" text-anchor="middle">3</text>
+  <text x="520" y="152" class="t">Restricted settings</text>
+  <text x="520" y="178" class="s">only if the toggle is greyed</text>
+  <text x="520" y="198" class="s">out: App info → ⋮ → Allow</text>
+  <text x="520" y="218" class="s">restricted settings</text>
+  <text x="520" y="238" class="s">(Android 13+)</text>
+
+  <rect x="736" y="80" width="196" height="200" rx="16" class="req"/>
+  <circle cx="764" cy="110" r="16" fill="#6366F1"/><text x="764" y="115" class="n" text-anchor="middle">4</text>
+  <text x="752" y="152" class="t">Enable service</text>
+  <text x="752" y="178" class="s">Settings → Accessibility</text>
+  <text x="752" y="198" class="s">→ EdgeVol → On</text>
+  <text x="752" y="218" class="s">(deep-linked); the handle</text>
+  <text x="752" y="238" class="s">appears immediately</text>
+
+  <rect x="968" y="80" width="196" height="200" rx="16" class="opt"/>
+  <circle cx="996" cy="110" r="16" fill="#9CA3AF"/><text x="996" y="115" class="n" text-anchor="middle">5</text>
+  <text x="984" y="152" class="t">Add QS tile</text>
+  <text x="984" y="178" class="s">one-tap system prompt on</text>
+  <text x="984" y="198" class="s">Android 13+, else edit</text>
+  <text x="984" y="218" class="s">Quick Settings tiles</text>
+  <text x="984" y="238" class="s">manually</text>
+
+  <g>
+    <path d="M238,180 L270,180" class="line" marker-end="url(#arr)"/>
+    <path d="M470,180 L502,180" class="line" marker-end="url(#arr)"/>
+    <path d="M702,180 L734,180" class="line" marker-end="url(#arr)"/>
+    <path d="M934,180 L966,180" class="line" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- ready banner -->
+  <path d="M1066,282 L1066,314" class="line" marker-end="url(#arr)"/>
+  <rect x="740" y="318" width="424" height="44" rx="22" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+  <text x="952" y="346" class="row" text-anchor="middle" style="fill:#166534">✓ Ready: tap or drag the handle in any app</text>
+
+  <!-- setup screen mock -->
+  <rect x="40" y="380" width="680" height="270" rx="20" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1.5"/>
+  <rect x="64" y="400" width="32" height="32" rx="8" fill="url(#bg)"/>
+  <g fill="#FFFFFF"><rect x="71" y="409" width="4" height="15" rx="2"/><rect x="78" y="405" width="4" height="19" rx="2"/><rect x="85" y="413" width="4" height="11" rx="2"/></g>
+  <text x="108" y="423" style="font-size:18px;font-weight:700">EdgeVol setup</text>
+  <text x="560" y="423" class="s">MainActivity (Compose)</text>
+
+  <rect x="64" y="448" width="632" height="42" rx="12" fill="#F5F3FF"/>
+  <text x="84" y="474" class="row">Accessibility service</text>
+  <rect x="590" y="456" width="90" height="26" rx="13" fill="#DCFCE7"/>
+  <text x="635" y="474" class="chip" text-anchor="middle" style="fill:#166534">On ✓</text>
+
+  <rect x="64" y="498" width="632" height="42" rx="12" fill="#F5F3FF"/>
+  <text x="84" y="524" class="row">Quick Settings tile</text>
+  <text x="240" y="524" class="s">optional</text>
+  <rect x="590" y="506" width="90" height="26" rx="13" fill="none" stroke="#6366F1" stroke-width="1.5"/>
+  <text x="635" y="524" class="chip" text-anchor="middle" style="fill:#4338CA">Add tile</text>
+
+  <rect x="64" y="548" width="632" height="42" rx="12" fill="#F5F3FF"/>
+  <text x="84" y="574" class="row">Handle</text>
+  <text x="150" y="574" class="s">Right edge · 40% height · Medium · 35%</text>
+  <text x="680" y="574" class="chip" text-anchor="end" style="fill:#4338CA">Customize ›</text>
+
+  <rect x="64" y="598" width="632" height="42" rx="12" fill="#F5F3FF"/>
+  <text x="84" y="624" class="row">Try it</text>
+  <text x="150" y="624" class="s">opens Android's own volume panel</text>
+  <rect x="540" y="606" width="140" height="26" rx="13" fill="#6366F1"/>
+  <text x="610" y="624" class="chip" text-anchor="middle" style="fill:#FFFFFF">Show panel</text>
+
+  <!-- legend -->
+  <text x="760" y="410" class="t">Legend</text>
+  <rect x="760" y="426" width="48" height="30" rx="8" class="req"/>
+  <text x="822" y="446" class="s">required step</text>
+  <rect x="760" y="468" width="48" height="30" rx="8" class="opt"/>
+  <text x="822" y="488" class="s">only if needed / optional</text>
+  <text x="760" y="540" class="t">Notes</text>
+  <text x="760" y="564" class="s">• The only permission is the accessibility service.</text>
+  <text x="760" y="586" class="s">• It never reads screen content</text>
+  <text x="760" y="604" class="s">   (canRetrieveWindowContent = false).</text>
+  <text x="760" y="626" class="s">• No INTERNET permission, no trackers.</text>
+  <text x="760" y="648" class="s">• Builds installed with adb usually skip step 3.</text>
+</svg>
