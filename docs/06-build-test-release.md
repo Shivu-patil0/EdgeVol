@@ -5,7 +5,7 @@
 | Tool | Status on this machine | Plan |
 |---|---|---|
 | JDK 17 | ✅ present (JDK 17.0.15; not the default `java`) | Export `JAVA_HOME` to it for every Gradle command, e.g. `JAVA_HOME=<path to JDK 17> ./gradlew …`. Never commit the path or `org.gradle.java.home` |
-| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `platforms/android-37.0` (auto-downloaded by Gradle, required by `compileSdk 37`), `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). `sdk.dir` is in the git-ignored `local.properties`. No emulator installed; use a phone with USB debugging |
+| Android SDK + `adb` | ✅ installed with the `android` CLI (`~/.local/bin/android`): `platform-tools` 37.0.1, `platforms/android-36`, `platforms/android-37.0` (auto-downloaded by Gradle, required by `compileSdk 37`), `build-tools/36.0.0` in `~/Library/Android/sdk` | `adb` is at `~/Library/Android/sdk/platform-tools/adb` (not on PATH). `sdk.dir` is in the git-ignored `local.properties`. No emulator installed. Test phone: POCO X2 (Android 11, MIUI 12.5) connected over Wi-Fi debugging, see below |
 | Gradle | ✅ wrapper **9.8.1** (`-bin`, sha256 pinned); AGP **9.4.1** with built-in Kotlin; Kotlin **2.4.21**; Compose BOM **2026.09.00** | No global install needed. If the wrapper download times out (GitHub release-assets redirect), retry or pre-seed `~/.gradle/wrapper/dists` |
 | Node / `npx` | ✅ present | Only used for the `skills` CLI |
 
@@ -61,7 +61,20 @@ Prefix each command with `JAVA_HOME=<path to JDK 17>`. The full M1 check is:
 ./gradlew connectedDebugAndroidTest      # on-device Compose UI tests
 ```
 
-Developer shortcuts (emulator or USB-debugging device):
+## Connecting a phone over Wi-Fi (no USB cable)
+
+Works on Android 11+ when the phone and the Mac are on the same network (verified with a POCO X2 on 2026-10-17). Use the full adb path: `ADB=~/Library/Android/sdk/platform-tools/adb`.
+
+1. Phone: unlock Developer options (tap *Build number* 7 times) → turn on **Wireless debugging** → **Pair device with pairing code**. Note the pairing `IP:port` and 6-digit code. Both are short-lived and local-only.
+2. Mac: `$ADB pair <IP:port>` and enter the code.
+3. Mac: `$ADB mdns services` shows the connect address (`_adb-tls-connect`), and `$ADB devices -l` should list the phone. If it doesn't, use `$ADB connect <IP:port>` with the port from the main *Wireless debugging* screen (it differs from the pairing port).
+4. Install and run: `$ADB install -r app/build/outputs/apk/debug/app-debug.apk`, then `$ADB shell am start -n app.edgevol/.MainActivity`. `./gradlew installDebug` also works once the phone is listed.
+
+**Xiaomi / MIUI phones:**
+- Turn on **Install via USB** in Developer options, or `adb install` fails with `INSTALL_FAILED_USER_RESTRICTED`. Watch the phone for an install prompt.
+- Without **USB debugging (Security settings)**, adb can't write secure settings or inject touch. The shortcut below and `adb shell input` won't work, so enable the accessibility service from the app's *Enable* button and test gestures by hand. This toggle may require a Mi account and a SIM.
+
+Developer shortcuts (emulator, or a phone that allows secure-settings writes):
 
 ```bash
 # Enable the accessibility service without tapping through Settings
